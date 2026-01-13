@@ -2,7 +2,7 @@
     "name": "Калькулятор заказа Herbalife",
     "short_name": "HL Calc",
     "description": "Калькулятор для расчёта заказов продукции Herbalife",
-    "start_url": "./Калькулятор заказа Herbalife.html",
+    "start_url": "./index.html",
     "display": "standalone",
     "background_color": "#ffffff",
     "theme_color": "#ffffff",
