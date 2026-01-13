@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Калькулятор заказа Herbalife</title>
+    <meta name="apple-mobile-web-app-title" content="HL Calc">
+    <meta name="application-name" content="HL Calc">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="icon"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='12' fill='%2316a34a'/%3E%3Cg transform='translate(6,6) scale(0.5)'%3E%3Cpath d='M16 2H8C5 2 3 4 3 7V17C3 20 5 22 8 22H16C19 22 21 20 21 17V7C21 4 19 2 16 2Z' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M10.5 7H13.5' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M7.5 12H8.5' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M11.5 12H12.5' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M15.5 12H16.5' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M7.5 16H8.5' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M11.5 16H12.5' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M15.5 16H16.5' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/g%3E%3C/svg%3E">
+    <link rel="apple-touch-icon" href="icon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        ::selection {
+            background-color: #22c55e;
+            /* green-500 */
+            color: white;
+        }
+
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+        }
+
+        .hl-green {
+            color: #78be20;
+        }
+
+        .hl-bg-green {
+            background-color: #78be20;
+        }
+
+        .hl-bg-dark {
+            background-color: #242424;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            /* slate-300 */
+            border-radius: 10px;
+            border: 2px solid transparent;
+            background-clip: content-box;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+            /* slate-400 */
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.3s ease;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+        }
+
+        /* Hide spin buttons */
+        input[type=number]::-webkit-outer-spin-button,
+        input[type=number]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type=number] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+
+        /* Анимация элементов списка */
+        .list-move {
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+
+        .list-enter-active {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+
+        .list-leave-active {
+            transition: all 0.2s ease-out !important;
+            position: absolute !important;
+            width: 100% !important;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .list-enter-from {
+            opacity: 0 !important;
+            transform: scale(0.95) !important;
+        }
+
+        .list-leave-to {
+            opacity: 0 !important;
+            transform: translateX(-15px) scale(0.95) !important;
+        }
+
+        /* Cart specific animation (fix duplication glitch) */
+        /* Cart specific animation (fix duplication glitch) */
+        .cart-list-move {
+            transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1) !important;
+            z-index: 1;
+            /* Items moving up stay above */
+            position: relative;
+        }
+
+        .cart-list-enter-active {
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important;
+        }
+
+        .cart-list-leave-active {
+            transition: all 0.4s ease-out !important;
+            position: absolute !important;
+            width: 100% !important;
+            z-index: -1;
+            /* Deleted item goes behind */
+            pointer-events: none;
+        }
+
+        .cart-list-enter-from {
+            opacity: 0 !important;
+            transform: scale(0.95) !important;
+        }
+
+        .cart-list-leave-to {
+            opacity: 0 !important;
+            transform: translateX(-30px) !important;
+        }
+
+        /* Staggered Entrance Animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .stagger-appear {
+            animation: fadeInUp 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+        }
+
+        @keyframes subtle-shine {
+            0% {
+                background-position: 200% center;
+            }
+
+            100% {
+                background-position: -200% center;
+            }
+        }
+
+        .shine-effect {
+            background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.3) 50%, transparent 70%);
+            background-size: 200% 100%;
+            animation: subtle-shine 4s infinite linear;
+        }
+
+        /* Mobile Hover Fixes */
+        @media (hover: hover) {
+            .btn-minus:hover {
+                color: #ef4444;
+            }
+
+            .btn-plus:hover {
+                color: #16a34a;
+            }
+
+            .btn-copy:not(.is-copied):hover {
+                transform: scale(1.03) translateY(-2px);
+                box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.4);
+            }
+
+            .btn-delete:not(.is-clearing):hover {
+                color: #ef4444;
+                border-color: #ef4444;
+                box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.2);
+                /* shadow-red-500/20 */
+                transform: scale(1.05) translateY(-2px);
+            }
+
+            /* Add generic shadow-lg on hover for delete if needed, but the above shadow covers it */
+            .btn-delete:not(.is-clearing):hover {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+                /* shadow-lg base */
+                /* Combine red shadow */
+                box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.2), 0 4px 6px -4px rgba(239, 68, 68, 0.1);
+            }
+        }
+
+        /* Force Active States (Touch Feedback) */
+        .btn-minus:active {
+            color: #ef4444 !important;
+            background-color: #e2e8f0;
+        }
+
+        .btn-plus:active {
+            color: #16a34a !important;
+            background-color: #e2e8f0;
+        }
+
+        /* Remove default tap highlight on mobile to let custom colors show */
+        button {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Premium Logo Shine Animation */
+        @keyframes logo-shine {
+            0% {
+                transform: translateX(-150%) skewX(-25deg);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 1;
+            }
+
+            90% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateX(150%) skewX(-25deg);
+                opacity: 0;
+            }
+        }
+
+        .logo-container {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .logo-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0) 100%);
+            transform: translateX(-150%) skewX(-25deg);
+            animation: logo-shine 7s infinite ease-in-out;
+            pointer-events: none;
+        }
+
+        /* Spotlight Effect for Product Cards */
+        /* Spotlight Effect for Product Cards - Desktop Only */
+        .spotlight-card {
+            position: relative;
+            overflow: hidden;
+            --mouse-x: 50%;
+            --mouse-y: 50%;
+        }
+
+        @media (hover: hover) {
+            .spotlight-card::before {
+                content: "";
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: radial-gradient(800px circle at var(--mouse-x) var(--mouse-y),
+                        rgba(120, 190, 32, 0.15),
+                        transparent 40%);
+                opacity: 0;
+                transition: opacity 0.5s;
+                pointer-events: none;
+                z-index: 1;
+            }
+
+            .spotlight-card:hover::before {
+                opacity: 1;
+            }
+        }
+
+        /* Shake Animation for Error */
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            20% {
+                transform: translateX(-5px);
+            }
+
+            40% {
+                transform: translateX(5px);
+            }
+
+            60% {
+                transform: translateX(-5px);
+            }
+
+            80% {
+                transform: translateX(5px);
+            }
+        }
+
+        .animate-shake {
+            animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
+        }
+
+        /* Animated Trash Lid */
+        /* Only apply hover effects on devices that support hover */
+        @media (hover: hover) {
+            .btn-delete:hover .trash-lid {
+                transform: rotate(-12deg) translateY(-2px);
+            }
+
+            .btn-delete:hover svg {
+                color: #ef4444;
+            }
+        }
+
+        .btn-delete.is-clearing .trash-lid {
+            transform: rotate(-30deg) translateY(-4px);
+        }
+
+        /* Mobile Scroll Optimization */
+        @media (hover: hover) {
+            .product-card-interactive:hover {
+                transform: scale(1.02);
+                box-shadow: 0 8px 30px rgba(120, 190, 32, 0.15);
+                border-color: #22c55e !important;
+                background-color: white;
+                z-index: 10;
+            }
+        }
+
+        /* Active Card Feedback (Mobile Touch) */
+        .active-card-feedback {
+            transform: scale(1.02);
+            box-shadow: 0 8px 30px rgba(120, 190, 32, 0.15);
+            border-color: #22c55e !important;
+            background-color: white;
+            z-index: 10;
+        }
+
+        .btn-add-interactive {
+            background-color: #0f172a;
+            /* slate-900 */
+        }
+
+        .btn-add-interactive:active {
+            transform: scale(0.75);
+        }
+
+        .btn-add-last-active {
+            background-color: #15803d;
+            /* green-700 */
+        }
+
+        .btn-add-last-active:active {
+            transform: scale(0.95);
+        }
+
+        @media (hover: hover) {
+            .btn-add-interactive:hover {
+                background-color: #16a34a;
+                /* green-600 */
+            }
+
+            .btn-add-last-active:hover {
+                background-color: #166534;
+                /* green-800 */
+            }
+
+            /* Group hover effect: scale button when card is hovered */
+            .group:hover .btn-add-interactive {
+                transform: scale(1.1);
+            }
+        }
+
+        .product-card-interactive {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: pan-y;
+            /* Explicitly allow vertical scroll */
+        }
+
+        /* Active Card Feedback (Mobile Touch) */
+        .active-card-feedback {
+            transform: scale(1.02);
+            box-shadow: 0 8px 30px rgba(120, 190, 32, 0.15);
+            border-color: #22c55e !important;
+            background-color: white;
+            z-index: 10;
+        }
+
+        /* iOS Toggle Switch */
+        .ios-switch {
+            position: relative;
+            display: inline-block;
+            width: 36px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .ios-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #e2e8f0;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        input:checked+.slider {
+            background-color: #22c55e;
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(16px);
+        }
+
+        /* Film Grain Texture */
+        .bg-noise {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* Анимация мягкого дыхания логотипа */
+        @keyframes pulse-slow {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.05);
+                opacity: 0.9;
+            }
+        }
+
+        .animate-pulse-slow {
+            animation: pulse-slow 2s infinite ease-in-out;
+        }
+
+        /* Класс для скрытия прелоадера */
+        .preloader-hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* PWA Safe Area - паддинг для шапки */
+        .pwa-header-padding {
+            padding-top: calc(1.25rem + env(safe-area-inset-top, 0px));
+        }
+
+        /* PWA Safe Area Overlay - fixed блок вверху, перекрывает область под статус-баром */
+        #pwa-status-bar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: env(safe-area-inset-top, 0px);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        /* Sticky элементы сдвигаются на высоту safe-area */
+        .pwa-sticky-offset {
+            top: env(safe-area-inset-top, 0px);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- PWA Safe Area Overlay - fixed блок вверху, перекрывает область под статус-баром -->
+    <div id="pwa-status-bar-overlay"></div>
+
+    <div class="bg-noise"></div>
+
+    <div id="preloader"
+        class="fixed inset-0 z-[9999] bg-slate-50 flex flex-col items-center justify-center transition-opacity duration-700 ease-out">
+        <div
+            class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-green-400/20 rounded-full blur-[80px]">
+        </div>
+
+        <div
+            class="relative z-10 w-20 h-20 bg-green-600 rounded-full flex items-center justify-center text-white shadow-2xl shadow-green-600/30 animate-pulse-slow">
+            <svg class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 2H8C5 2 3 4 3 7V17C3 20 5 22 8 22H16C19 22 21 20 21 17V7C21 4 19 2 16 2Z" />
+                <path d="M10.5 7H13.5" />
+                <path d="M7.5 12H8.5" />
+                <path d="M11.5 12H12.5" />
+                <path d="M15.5 12H16.5" />
+                <path d="M7.5 16H8.5" />
+                <path d="M11.5 16H12.5" />
+                <path d="M15.5 16H16.5" />
+            </svg>
+        </div>
+
+        <p
+            class="relative z-10 mt-6 text-xl font-bold tracking-tight bg-gradient-to-br from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent animate-pulse">
+            Загрузка...</p>
+    </div>
+
+    <div id="app" class="h-screen h-[100dvh] flex flex-col lg:flex-row overflow-hidden text-slate-800 bg-slate-900"
+        style="overscroll-behavior-y: none;">
+
+        <div class="flex-1 flex flex-col h-full relative z-10 overflow-y-auto lg:overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] origin-top bg-white"
+            :class="isCartOpen ? 'scale-[0.93] rounded-[2rem] opacity-80 translate-y-4' : 'scale-100 rounded-none opacity-100 translate-y-0'"
+            ref="mainScrollContainer" style="scrollbar-gutter: stable;">
+            <header ref="mainHeader"
+                class="pwa-header-padding bg-white/90 backdrop-blur-md px-6 pb-5 border-b border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm z-20">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="logo-container w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-green-600/20">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16 2H8C5 2 3 4 3 7V17C3 20 5 22 8 22H16C19 22 21 20 21 17V7C21 4 19 2 16 2Z"
+                                stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <path d="M10.5 7H13.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <path d="M7.5 12H8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <path d="M11.5 12H12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <path d="M15.5 12H16.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <path d="M7.5 16H8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <path d="M11.5 16H12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <path d="M15.5 16H16.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                    <div class="flex flex-col">
+                        <h1
+                            class="text-xl font-bold tracking-tight bg-gradient-to-br from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent">
+                            Калькулятор заказа Herbalife</h1>
+                        <span class="text-[10px] font-light text-slate-400 tracking-wide -mt-0.5">Цены от
+                            01.01.2026</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-2 items-end">
+                    <!-- My Discount (Purchase Price) -->
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-bold text-slate-400">моя скидка</span>
+                        <div class="inline-flex bg-slate-100 p-1 rounded-xl">
+                            <button v-for="disc in myDiscounts" :key="'my'+disc" @click="myDiscount = disc; vibrate(15)"
+                                :class="['px-3 py-1.5 text-xs font-bold rounded-lg transition-all duration-100 active:scale-90', myDiscount === disc ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700']">
+                                {{ disc === 100 ? '100%' : disc + '%' }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Client Discount (Selling Price) -->
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-bold text-slate-400 text-right leading-tight">заказ под</span>
+                        <div class="inline-flex bg-slate-100 p-1 rounded-xl">
+                            <button v-for="disc in clientDiscounts" :key="'client'+disc"
+                                @click="clientDiscount = disc; vibrate(15)"
+                                :class="['px-3 py-1.5 text-xs font-bold rounded-lg transition-all duration-100 active:scale-90', clientDiscount === disc ? 'bg-white shadow-sm text-green-600' : 'text-slate-500 hover:text-slate-700']">
+                                {{ disc === 100 ? '100%' : disc + '%' }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+
+
+            <div class="flex-1 bg-slate-50 pb-36 lg:pb-0 lg:overflow-y-auto overflow-visible" ref="contentWrapper"
+                :class="{'min-h-[150vh]': searchQuery.length > 0}" style="scrollbar-gutter: stable;">
+
+                <!-- Search Bar (Moved Inside for Desktop Sticky Layering) -->
+                <div class="px-6 pt-4 pb-4 bg-slate-50/90 backdrop-blur-md border-b border-slate-200 sticky z-30 pwa-sticky-offset"
+                    ref="searchBar">
+                    <div class="relative">
+                        <input v-model="searchQuery" @focus="fixSearchScroll" @input="fixSearchScroll"
+                            @click="fixSearchScroll" type="text" placeholder="Поиск продукта (название или SKU)..."
+                            ref="searchInput"
+                            class="peer w-full pl-10 pr-10 py-3 rounded-xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-green-500/50 focus:border-green-500 focus:shadow-[0_0_15px_rgba(120,190,32,0.3)] transition-all duration-300 ease-out bg-white outline-none">
+                        <svg class="w-5 h-5 text-slate-400 absolute left-3 top-3.5 transition-all duration-300 peer-focus:text-green-600 peer-focus:scale-110"
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        <!-- Clear Button -->
+                        <button v-if="searchQuery" @click="searchQuery = ''; $refs.searchInput.focus()"
+                            class="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 p-0.5 rounded-full hover:bg-slate-100 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="flex gap-2 mt-3 overflow-x-auto pb-1 no-scrollbar">
+                        <button @click="selectedCategory = 'all'; fixSearchScroll(); vibrate(15)"
+                            :class="['whitespace-nowrap px-4 py-2 rounded-2xl text-xs font-medium transition-all duration-100 active:scale-90', selectedCategory === 'all' ? 'bg-slate-900 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200']">Все</button>
+                        <button v-for="cat in categories" :key="cat"
+                            @click="selectedCategory = cat; fixSearchScroll(); vibrate(15)"
+                            :class="['whitespace-nowrap px-4 py-2 rounded-2xl text-xs font-medium transition-all duration-100 active:scale-90', selectedCategory === cat ? 'bg-green-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200']">
+                            {{ cat }}
+                        </button>
+                    </div>
+                </div>
+
+                <div v-for="cat in categories" :key="cat">
+                    <div v-if="groupedProducts[cat]" class="mb-2">
+                        <h3 v-if="selectedCategory === 'all'"
+                            :style="{ top: 'calc(' + searchBarHeight + 'px + env(safe-area-inset-top, 0px))' }"
+                            class="sticky z-10 bg-slate-50/80 backdrop-blur-md px-6 py-3 text-lg font-bold text-slate-800 shadow-sm border-b border-slate-100/50">
+                            {{ cat }}</h3>
+
+                        <div class="px-6 pt-2 relative">
+                            <transition-group name="list" tag="div" class="flex flex-col gap-2 relative w-full">
+                                <div v-for="(product, index) in groupedProducts[cat]" :key="product.sku"
+                                    class="w-full relative stagger-appear"
+                                    :style="{ animationDelay: (index * 50) + 'ms' }">
+                                    <div @mousemove="handleMouseMove"
+                                        :class="['product-card-interactive spotlight-card flex items-center gap-3 p-3 rounded-xl border shadow-sm duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] transition-all group relative overflow-hidden bg-white', getCardClass(product)]">
+
+                                        <span class="text-[10px] font-mono text-slate-400 w-8 shrink-0">{{ product.sku
+                                            }}</span>
+
+                                        <div class="flex-grow min-w-0 pr-2">
+                                            <h3 class="font-medium text-slate-800 text-sm leading-tight truncate"
+                                                :title="product.name"><span
+                                                    v-html="highlightMatch(product.name)"></span>
+                                            </h3>
+                                        </div>
+
+                                        <span
+                                            class="hidden sm:block text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap">{{
+                                            product.vp }} VP</span>
+
+                                        <div class="text-right shrink-0 min-w-[60px] sm:min-w-[80px]">
+                                            <p class="text-sm font-bold text-slate-900 leading-none tabular-nums">{{
+                                                formatCurrency(getPrice(product, clientDiscount)) }}</p>
+                                            <p class="text-[10px] font-bold text-green-600 sm:hidden mt-0.5">{{
+                                                product.vp
+                                                }} VP
+                                            </p>
+                                        </div>
+
+                                        <button @click.stop="addToCart(product)"
+                                            :class="['w-8 h-8 rounded-full text-white flex items-center justify-center shadow-md shrink-0 transition-all duration-300', product.justAdded ? 'bg-green-500 scale-110 rotate-0' : (lastAddedSku === product.sku ? 'btn-add-last-active' : 'btn-add-interactive')]">
+                                            <svg v-if="!product.justAdded" class="w-4 h-4" fill="none"
+                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M12 4v16m8-8H4"></path>
+                                            </svg>
+                                            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M5 13l4 4L19 7"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </transition-group>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="filteredProducts.length === 0"
+                    class="flex flex-col items-center justify-center py-24 text-slate-400">
+                    <div class="relative w-20 h-20 mb-4">
+                        <div class="absolute inset-0 bg-slate-100 rounded-full animate-pulse"></div>
+                        <svg class="absolute inset-0 m-auto w-10 h-10 text-slate-300" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <p class="font-medium text-slate-600">Ничего не найдено</p>
+                    <p class="text-sm text-slate-400 mt-1">Попробуйте изменить запрос</p>
+
+                    <button @click="searchQuery = ''; selectedCategory = 'all'; vibrate(15)"
+                        class="mt-6 px-6 py-2 bg-white border border-slate-200 rounded-full text-sm font-bold text-slate-700 shadow-sm hover:shadow-md hover:text-green-600 transition-all active:scale-95">
+                        Показать все товары
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Cart Backdrop -->
+        <div v-if="isCartOpen" @click="isCartOpen = false"
+            class="fixed inset-0 bg-slate-900/40 z-50 lg:hidden backdrop-blur-md transition-opacity"></div>
+
+        <!-- Cart Sidebar / Bottom Sheet -->
+        <div
+            :class="['fixed bottom-0 left-0 w-full h-[85vh] lg:h-auto lg:static lg:w-[400px] bg-white lg:border-l border-slate-200 flex flex-col shadow-2xl z-[60] lg:z-30 rounded-t-[30px] lg:rounded-none transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]', isCartOpen ? 'translate-y-0' : 'translate-y-[110%] lg:translate-y-0']">
+
+            <!-- Mobile Handle -->
+            <div class="w-full flex justify-center pt-3 pb-1 lg:hidden" @click="isCartOpen = false">
+                <div class="w-12 h-1.5 bg-slate-300 rounded-full"></div>
+            </div>
+
+            <div class="p-6 bg-slate-900 text-white flex justify-between items-center lg:rounded-none rounded-t-[30px]">
+                <h2 class="font-bold text-lg">Ваш заказ</h2>
+                <div class="flex items-center gap-3">
+                    <span class="bg-white/20 px-2 py-0.5 rounded text-sm">{{ cartItemCount }} поз.</span>
+                    <button @click="isCartOpen = false" class="lg:hidden text-slate-400 hover:text-white">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12">
+                            </path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 space-y-3" ref="cartContainer">
+                <div v-if="cart.length === 0" class="flex flex-col items-center justify-center h-full text-slate-300">
+                    <svg class="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z">
+                        </path>
+                    </svg>
+                    <p class="text-sm font-medium">Корзина пуста</p>
+                    <p class="text-xs mt-1 text-slate-400">
+                        <span class="lg:hidden">Выберите товары из списка</span>
+                        <span class="hidden lg:inline">Выберите товары из списка слева</span>
+                    </p>
+                </div>
+
+                <transition-group name="cart-list" tag="div" class="flex flex-col gap-3 relative overflow-hidden">
+                    <div v-for="item in cart" :key="item.product.sku"
+                        class="flex gap-3 items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-slate-900 truncate">{{ item.product.name }}</p>
+                            <p class="text-xs text-slate-500 tabular-nums">{{ formatCurrency(getPrice(item.product,
+                                clientDiscount)) }}</p>
+                        </div>
+
+                        <div class="flex items-center bg-slate-100 rounded-full h-9">
+                            <button @click="updateQuantity(item, -1)"
+                                class="w-8 h-full flex items-center justify-center text-slate-500 font-bold active:bg-slate-200 active:text-red-500 rounded-l-full transition-colors btn-minus">−</button>
+                            <input type="number" v-model.number="item.qty" @change="validateQuantity(item)"
+                                class="w-8 text-center font-bold text-sm bg-transparent border-none outline-none appearance-none p-0 focus:ring-0">
+                            <button @click="updateQuantity(item, 1)"
+                                class="w-8 h-full flex items-center justify-center text-slate-500 font-bold active:bg-slate-200 active:text-green-600 rounded-r-full transition-colors btn-plus">+</button>
+                        </div>
+                    </div>
+                </transition-group>
+            </div>
+
+            <div
+                class="bg-white border-t border-slate-200 p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] pb-[calc(1.5rem_+_env(safe-area-inset-bottom))]">
+                <div class="grid grid-cols-[1.5fr_1fr] gap-4 mb-6">
+                    <div
+                        class="flex flex-col justify-center gap-2 px-3 py-2 bg-slate-50/80 rounded-2xl border border-slate-100">
+                        <!-- Delivery Control -->
+                        <div class="flex items-center gap-2">
+                            <label class="ios-switch">
+                                <input type="checkbox" v-model="hasDelivery" @change="vibrate(15)">
+                                <span class="slider"></span>
+                            </label>
+                            <span class="text-xs font-bold text-slate-600 flex-1">Доставка</span>
+                            <input type="number" v-model="deliveryCost"
+                                class="w-14 text-right text-xs font-bold bg-white border border-slate-200 rounded-md px-1.5 py-0.5 focus:outline-none focus:border-green-500 transition-all shadow-sm placeholder-slate-300"
+                                :class="hasDelivery ? 'text-slate-900 opacity-100' : 'text-slate-300 opacity-50'"
+                                :disabled="!hasDelivery" placeholder="0">
+                        </div>
+                        <!-- Divider -->
+                        <div class="h-px bg-slate-200 w-full"></div>
+                        <!-- Simple Copy Control -->
+                        <div class="flex items-center gap-2">
+                            <label class="ios-switch">
+                                <input type="checkbox" v-model="simpleCopy" @change="vibrate(15)">
+                                <span class="slider"></span>
+                            </label>
+                            <span class="text-xs font-bold text-slate-600">Копировать без цен</span>
+                        </div>
+                    </div>
+
+                    <!-- Total VP Block (Restored to Grid) -->
+                    <div
+                        class="relative overflow-hidden p-3 flex flex-col justify-center items-end rounded-xl bg-gradient-to-br from-green-50 to-emerald-100 border border-green-200/60 shadow-[0_10px_20px_-5px_rgba(22,163,74,0.15)]">
+                        <div
+                            class="absolute inset-0 bg-white/40 blur-xl rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none">
+                        </div>
+                        <p class="text-sm text-green-600 font-bold mb-0.5 relative z-10">Всего VP</p>
+                        <p class="text-xl font-bold text-green-700 leading-none cursor-pointer hover:opacity-75 active:scale-95 transition-all relative z-10"
+                            @click="copyRawNumber(totals.vp)" title="Нажмите, чтобы скопировать число">{{
+                            formatNumber(animatedVP) }}</p>
+                    </div>
+                </div>
+
+                <!-- Totals Details List -->
+                <div class="space-y-2 mb-6">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-500">Клиент платит ({{ clientDiscount}}%):</span>
+                        <span
+                            class="font-bold cursor-pointer hover:opacity-75 active:scale-95 transition-all bg-gradient-to-br from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent tabular-nums"
+                            @click="copyRawNumber(totals.price)" title="Нажмите, чтобы скопировать число">{{
+                            formatCurrency(animatedPrice) }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-500">Мои расходы ({{ myDiscount }}%):</span>
+                        <span
+                            class="font-bold text-red-500 cursor-pointer hover:opacity-75 active:scale-95 transition-all tabular-nums"
+                            @click="copyRawNumber(totals.expenses)" title="Нажмите, чтобы скопировать число">- {{
+                            formatCurrency(animatedExpenses) }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-500">Мой доход:</span>
+                        <span
+                            :class="['font-bold cursor-pointer hover:opacity-75 active:scale-95 transition-all', totals.isLoss ? 'text-red-500' : 'text-green-600']"
+                            @click="copyRawNumber(totals.profit)" title="Нажмите, чтобы скопировать число">
+                            {{ totals.isLoss ? '' : '+' }} {{ formatCurrency(animatedProfit) }}
+                        </span>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button @click="copyOrder" :class="['relative overflow-hidden flex-1 h-[52px] rounded-xl text-base font-bold shadow-lg transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] active:scale-90 flex items-center justify-center gap-2 btn-copy',
+                            orderCopied 
+                                ? 'bg-slate-900 border border-transparent text-green-400 shadow-green-500/20 scale-[1.02] is-copied' 
+                                : 'bg-slate-900 border border-transparent text-white shadow-slate-900/20',
+                            { 'animate-shake': shakeError }]">
+
+                        <div v-if="!orderCopied" class="absolute inset-0 shine-effect pointer-events-none opacity-20">
+                        </div>
+                        <span v-if="!orderCopied">Копировать заказ</span>
+                        <span v-else class="flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            {{ copyFeedbackText }}
+                        </span>
+
+                    </button>
+                    <button @click="clearCart"
+                        :class="['relative overflow-hidden h-[52px] rounded-xl border transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] flex items-center justify-center gap-2 btn-delete', 
+                            isClearing 
+                                ? 'bg-red-500 border-red-500 text-white shadow-red-500/30 shadow-lg w-32 is-clearing' 
+                                : 'w-14 bg-white border-slate-200 text-slate-400 shadow-sm text-base active:scale-95']">
+
+                        <div v-if="isClearing" class="absolute inset-0 shine-effect pointer-events-none opacity-20">
+                        </div>
+
+                        <span v-if="isClearing" class="font-bold whitespace-nowrap">Удалить?</span>
+                        <svg v-else
+                            class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-red-500 transition-colors"
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <!-- Trash body -->
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6">
+                            </path>
+                            <!-- Trash lid (animated) -->
+                            <path class="trash-lid origin-bottom transition-transform duration-300"
+                                stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 7h16M10 7V4a1 1 0 011-1h2a1 1 0 011 1v3"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Mobile Bottom Summary Bar -->
+        <!-- Mobile Bottom Summary Bar -->
+        <Transition name="fade">
+            <div v-if="!isCartOpen && cartItemCount > 0"
+                class="fixed bottom-6 left-4 right-4 w-auto bg-slate-50/60 backdrop-blur-md border border-slate-200/60 px-4 py-3 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.12)] z-40 lg:hidden flex items-center justify-between gap-4">
+                <div class="flex flex-col" @click="isCartOpen = true">
+                    <span class="text-xs text-slate-500 font-medium">{{ cartItemCount }} поз. на {{
+                        formatNumber(animatedVP) }}
+                        VP</span>
+                    <span
+                        class="text-lg font-bold bg-gradient-to-br from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent">{{
+                        formatCurrency(animatedPrice) }}</span>
+                </div>
+                <button @click="isCartOpen = true"
+                    class="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-slate-900/20 active:scale-95 transition-transform flex items-center gap-2">
+                    <span>Ваш заказ</span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M5 10l7-7m0 0l7 7m-7-7v18">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+        </Transition>
+
+    </div>
+
+    <!-- Toast Notification Removed -->
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    searchQuery: '',
+                    lastAddedSku: null,
+                    myDiscount: 50, // Your buying discount
+                    clientDiscount: 100, // Client selling discount (default to Retail)
+                    myDiscounts: [50, 42, 35, 25],
+                    clientDiscounts: [50, 42, 35, 25, 15, 100],
+                    deliveryCost: 0,
+                    hasDelivery: false,
+                    simpleCopy: false,
+                    isCartOpen: false,
+                    selectedCategory: 'all',
+                    cart: [],
+                    animatedPrice: 0,
+                    animatedVP: 0,
+                    animatedExpenses: 0,
+                    animatedProfit: 0,
+
+                    isClearing: false,
+                    orderCopied: false,
+                    shakeError: false,
+                    copyFeedbackText: 'Скопировано',
+                    // Data parsed directly from your CSV file
+                    rawDb: [
+                        { cat: "Сбалансированное питание", sku: "2793", name: "Коктейль Формула 1", vp: 23.95, p50: 1853.79, p42: 2082.86, p35: 2283.29, p25: 2569.63, p15: 2855.96, p100: 3708 },
+                        { cat: "Сбалансированное питание", sku: "172K", name: "Протеин Дринк Микс", vp: 31.45, p50: 2639.00, p42: 2927.00, p35: 3180.00, p25: 3540.00, p15: 3900.00, p100: 4493.00 },
+                        { cat: "Сбалансированное питание", sku: "012K", name: "Протеиновый кофе - Латте Макиато", vp: 23.95, p50: 2132.56, p42: 2332.84, p35: 2508.08, p25: 2758.42, p15: 3008.76, p100: 4265 },
+                        { cat: "Сбалансированное питание", sku: "005K", name: "Коктейль Формула 1 - Дыня 2 кг", vp: 99.6, p50: 6849.69, p42: 7696.37, p35: 8437.22, p25: 9495.57, p15: 10553.92, p100: 13699 },
+                        { cat: "Сбалансированное питание", sku: "1636", name: "Вечерний коктейль", vp: 20.15, p50: 1557.94, p42: 1750.41, p35: 1918.82, p25: 2159.4, p15: 2399.98, p100: 3116 },
+                        { cat: "Сбалансированное питание", sku: "528K", name: "Протеиновая смесь для выпечки", vp: 20, p50: 1718.37, p42: 1877.95, p35: 2017.58, p25: 2217.05, p15: 2416.52, p100: 3437 },
+                        { cat: "Сбалансированное питание", sku: "0242", name: "Формула 3 (Белок)", vp: 17.95, p50: 1580.51, p42: 1775.81, p35: 1946.69, p25: 2190.82, p15: 2434.94, p100: 3161 },
+                        { cat: "Сбалансированное питание", sku: "182K", name: "Травяной напиток", vp: 19.95, p50: 1344.44, p42: 1510.56, p35: 1655.91, p25: 1863.55, p15: 2071.19, p100: 2689 },
+                        { cat: "Сбалансированное питание", sku: "179K", name: "Травяной напиток Классический 102г", vp: 34.95, p50: 2508.93, p42: 2819.01, p35: 3090.32, p25: 3477.92, p15: 3865.51, p100: 5018 },
+                        { cat: "Сбалансированное питание", sku: "1189", name: "Растительный напиток Алоэ", vp: 24.95, p50: 1681.16, p42: 1888.85, p35: 2070.58, p25: 2330.2, p15: 2589.82, p100: 3362 },
+                        { cat: "Сбалансированное питание", sku: "2864", name: "Овсяно-яблочный напиток", vp: 22.95, p50: 1620.77, p42: 1821.14, p35: 1996.47, p25: 2246.94, p15: 2497.4, p100: 3242 },
+                        { cat: "Сбалансированное питание", sku: "2865", name: "Комплекс пищевых волокон", vp: 22.95, p50: 1620.77, p42: 1821.14, p35: 1996.47, p25: 2246.94, p15: 2497.4, p100: 3242 },
+                        { cat: "Сбалансированное питание", sku: "0260", name: "Протеиновый батончик (14 шт)", vp: 7.7, p50: 1359.08, p42: 1424.28, p35: 1481.32, p25: 1562.82, p15: 1644.32, p100: 2718 },
+                        { cat: "Сбалансированное питание", sku: "001K", name: "Протеиновые мини-батончики (28 шт)", vp: 9.24, p50: 1629.92, p42: 1708.2, p35: 1776.69, p25: 1874.53, p15: 1972.37, p100: 3260 },
+                        { cat: "Сбалансированное питание", sku: "4472", name: "Батончик Формула 1 Экспресс (7 шт)", vp: 14, p50: 1063.23, p42: 1194.5, p35: 1309.37, p25: 1473.46, p15: 1637.55, p100: 2126 },
+                        { cat: "Сбалансированное питание", sku: "141K", name: "Протеиновые Чипсы (10 шт)", vp: 11.75, p50: 1373.11, p42: 1499.5, p35: 1610.1, p25: 1768.09, p15: 1926.08, p100: 2746 },
+                        { cat: "Сбалансированное питание", sku: "0265", name: "Фильтр для воды", vp: 20, p50: 2043.5, p42: 2159.25, p35: 2260.54, p25: 2405.23, p15: 2549.92, p100: 4087 },
+                        { cat: "Сбалансированное питание", sku: "0266", name: "Картридж к фильтру", vp: 5.35, p50: 597.8, p42: 621.81, p35: 642.82, p25: 672.83, p15: 702.84, p100: 1196 },
+
+                        { cat: "Контроль веса", sku: "0050", name: "Термо Комплит", vp: 30.95, p50: 2188.07, p42: 2458.52, p35: 2695.16, p25: 3033.23, p15: 3371.29, p100: 4376 },
+                        { cat: "Контроль веса", sku: "236K", name: "Фито Комплит", vp: 29.5, p50: 2403.4, p42: 2686.05, p35: 2933.37, p25: 3286.68, p15: 3639.99, p100: 4807 },
+                        { cat: "Контроль веса", sku: "3123", name: "Клеточный Активатор", vp: 21.95, p50: 1564.04, p42: 1757.29, p35: 1926.38, p25: 2167.94, p15: 2409.5, p100: 3128 },
+                        { cat: "Контроль веса", sku: "0117", name: "Желтые таблетки Термоджетикс", vp: 20.5, p50: 1293.2, p42: 1453.07, p35: 1592.95, p25: 1792.79, p15: 1992.63, p100: 2586 },
+                        { cat: "Контроль веса", sku: "0111", name: "Cell-u-loss", vp: 15.75, p50: 1320.04, p42: 1483.23, p35: 1626.02, p25: 1830, p15: 2033.98, p100: 2640 },
+
+                        { cat: "Целевое питание", sku: "0036", name: "Найтворкс", vp: 75, p50: 4768.37, p42: 5329.67, p35: 5820.8, p25: 6522.43, p15: 7224.05, p100: 9537 },
+                        { cat: "Целевое питание", sku: "1437", name: "H24 Восстановление силы", vp: 43, p50: 2589.45, p42: 2846.63, p35: 3071.66, p25: 3393.13, p15: 3714.6, p100: 5179 },
+                        { cat: "Целевое питание", sku: "110K", name: "Грин Макс Селект", vp: 38.91, p50: 3397.09, p42: 3707.17, p35: 3978.48, p25: 4366.08, p15: 4753.67, p100: 6794 },
+                        { cat: "Целевое питание", sku: "076K", name: "Коллаген Бьюти Комплекс", vp: 37.1, p50: 3154.31, p42: 3544.22, p35: 3885.4, p25: 4372.79, p15: 4860.18, p100: 6309 },
+                        { cat: "Целевое питание", sku: "173K", name: "Микробиотик Макс", vp: 27.1, p50: 2705.35, p42: 3039.63, p35: 3332.13, p25: 3749.98, p15: 4167.83, p100: 5411 },
+                        { cat: "Целевое питание", sku: "0043", name: "Гербалайфлайн Макс", vp: 19.4, p50: 1500.6, p42: 1686.24, p35: 1848.67, p25: 2080.71, p15: 2312.75, p100: 3001 },
+                        { cat: "Целевое питание", sku: "3151", name: "Лифтофф Апельсин", vp: 15.95, p50: 1262.09, p42: 1417.96, p35: 1554.34, p25: 1749.18, p15: 1944.01, p100: 2524 },
+                        { cat: "Целевое питание", sku: "0022", name: "Шизандра Эдванс", vp: 15.5, p50: 1112.03, p42: 1249.35, p35: 1369.51, p25: 1541.17, p15: 1712.82, p100: 2224 },
+                        { cat: "Целевое питание", sku: "0102", name: "Чай N-R-G", vp: 14.75, p50: 982.1, p42: 1103.51, p35: 1209.75, p25: 1361.52, p15: 1513.29, p100: 1964 },
+                        { cat: "Целевое питание", sku: "2038", name: "Формула 2 - Комплекс витаминов и минералов", vp: 13.55, p50: 1361.52, p42: 1529.78, p35: 1677.01, p25: 1887.34, p15: 2097.67, p100: 2723 },
+                        { cat: "Целевое питание", sku: "1466", name: "CR7 DRIVE", vp: 12.5, p50: 1218.17, p42: 1343.98, p35: 1454.06, p25: 1611.32, p15: 1768.57, p100: 2436 },
+                        { cat: "Целевое питание", sku: "0020", name: "ЭкстраКаль Эдванс", vp: 10.25, p50: 727.73, p42: 817.62, p35: 896.27, p25: 1008.64, p15: 1121, p100: 1455 },
+                        { cat: "Целевое питание", sku: "2273", name: "Иммьюн Бустер", vp: 9.5, p50: 733.83, p42: 824.5, p35: 903.84, p25: 1017.18, p15: 1130.51, p100: 1468 },
+
+                        { cat: "Promote", sku: "371A", name: "Бутылка 2000 мл.", vp: 2.4, p50: 1787.3, p42: 1787.3, p35: 1787.3, p25: 1787.3, p15: 1787.3, p100: 1787.3 },
+                        { cat: "Promote", sku: "180A", name: "Бутылка 900 мл.", vp: 2.2, p50: 1465.22, p42: 1465.22, p35: 1465.22, p25: 1465.22, p15: 1465.22, p100: 1465.22 },
+                        { cat: "Promote", sku: "101M", name: "Шейкер набор (5 шт)", vp: 1.65, p50: 895.48, p42: 895.48, p35: 895.48, p25: 895.48, p15: 895.48, p100: 895.48 },
+                        { cat: "Promote", sku: "8697", name: "Супер шейкер", vp: 1.65, p50: 690.52, p42: 690.52, p35: 690.52, p25: 690.52, p15: 690.52, p100: 690.52 },
+                        { cat: "Promote", sku: "297A", name: "Мерная ложка белая (10 шт.)", vp: 1.2, p50: 650.26, p42: 650.26, p35: 650.26, p25: 650.26, p15: 650.26, p100: 650.26 },
+                        { cat: "Promote", sku: "302A", name: "Контейнер (10 шт.)", vp: 0.9, p50: 486.78, p42: 486.78, p35: 486.78, p25: 486.78, p15: 486.78, p100: 486.78 },
+                        { cat: "Promote", sku: "8711", name: "Спортивная бутылка 500 мл.", vp: 0.75, p50: 435.54, p42: 435.54, p35: 435.54, p25: 435.54, p15: 435.54, p100: 435.54 },
+                        { cat: "Promote", sku: "719A", name: "Мерная ложка белая", vp: 0.16, p50: 79.3, p42: 79.3, p35: 79.3, p25: 79.3, p15: 79.3, p100: 79.3 },
+                        { cat: "Promote", sku: "1B42", name: "Эко-ложка (Бета/H24)", vp: 0.1, p50: 81.74, p42: 81.74, p35: 81.74, p25: 81.74, p15: 81.74, p100: 81.74 },
+                        { cat: "Promote", sku: "2B08", name: "Эко-ложка (Коллаген)", vp: 0.1, p50: 81.74, p42: 81.74, p35: 81.74, p25: 81.74, p15: 81.74, p100: 81.74 },
+                        { cat: "Литература", sku: "020N", name: "Бумажный пакет Herbalife мал", vp: 0.0001, p50: 12.2, p42: 12.2, p35: 12.2, p25: 12.2, p15: 12.2, p100: 12.2 },
+                    ]
+                }
+            },
+            mounted() {
+                // Имитация минимальной задержки для красоты (чтобы логотип успел мелькнуть)
+                setTimeout(() => {
+                    const preloader = document.getElementById('preloader');
+                    if (preloader) {
+                        preloader.classList.add('preloader-hidden');
+                        // Удаляем из DOM через секунду, чтобы не мешал
+                        setTimeout(() => preloader.remove(), 700);
+                    }
+                }, 800); // 800мс задержка, чтобы пользователь успел увидеть бренд
+
+                // Determine if mobile device
+                this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 1024;
+                window.addEventListener('resize', () => {
+                    this.isMobile = window.innerWidth < 1024;
+                });
+
+                // iOS Active State Hack
+                document.addEventListener("touchstart", function () { }, false);
+
+                // Load settings
+                // Load settings
+                const savedMyDiscount = localStorage.getItem('hl_my_discount');
+                if (savedMyDiscount) this.myDiscount = Number(savedMyDiscount);
+
+                const savedClientDiscount = localStorage.getItem('hl_client_discount');
+                if (savedClientDiscount) this.clientDiscount = Number(savedClientDiscount);
+
+                const savedCategory = localStorage.getItem('hl_category');
+                if (savedCategory) this.selectedCategory = savedCategory;
+
+                const savedHasDelivery = localStorage.getItem('hl_has_delivery');
+                if (savedHasDelivery) this.hasDelivery = savedHasDelivery === 'true';
+
+                const savedDeliveryCost = localStorage.getItem('hl_delivery_cost');
+                if (savedDeliveryCost) this.deliveryCost = Number(savedDeliveryCost);
+
+                const savedSimpleCopy = localStorage.getItem('hl_simple_copy');
+                if (savedSimpleCopy) this.simpleCopy = savedSimpleCopy === 'true';
+
+                // Load cart
+                try {
+                    const savedCart = JSON.parse(localStorage.getItem('hl_cart') || '[]');
+                    this.cart = savedCart.map(item => {
+                        const product = this.rawDb.find(p => p.sku === item.sku);
+                        if (product) {
+                            return { product: product, qty: item.qty };
+                        }
+                        return null;
+                    }).filter(i => i !== null);
+                } catch (e) {
+                    console.error('Failed to load cart', e);
+                    this.cart = [];
+                }
+                // Initialize sticky header dynamic height
+                this.updateSearchBarHeight();
+                window.addEventListener('resize', this.updateSearchBarHeight);
+            },
+            watch: {
+                myDiscount(val) {
+                    localStorage.setItem('hl_my_discount', val);
+                },
+                clientDiscount(val) {
+                    localStorage.setItem('hl_client_discount', val);
+                },
+                selectedCategory(val, oldVal) {
+                    localStorage.setItem('hl_category', val);
+
+                    // Mobile: Handle scroll and min-height for category switching
+                    if (window.innerWidth < 1024 && this.$refs.mainScrollContainer && this.$refs.mainHeader && this.$refs.contentWrapper) {
+                        const headerHeight = this.$refs.mainHeader.offsetHeight;
+
+                        // ONLY apply min-height to SHORT categories to enable scrolling
+                        // For "all" and long categories, use original behavior to preserve sticky search
+                        const shortCategories = ['Контроль веса', 'Литература'];
+                        if (shortCategories.includes(val)) {
+                            this.$refs.contentWrapper.style.minHeight = '120vh';
+                        } else {
+                            // IMPORTANT: Remove JS min-height for other categories to preserve sticky
+                            this.$refs.contentWrapper.style.minHeight = '';
+                        }
+
+                        // Scroll to hide header and show sticky search
+                        this.$nextTick(() => {
+                            this.$refs.mainScrollContainer.scrollTo({
+                                top: headerHeight,
+                                behavior: 'auto'
+                            });
+                        });
+                    }
+                },
+                hasDelivery(val) {
+                    localStorage.setItem('hl_has_delivery', val);
+                },
+                deliveryCost(val) {
+                    localStorage.setItem('hl_delivery_cost', val);
+                },
+                simpleCopy(val) {
+                    localStorage.setItem('hl_simple_copy', val);
+                },
+                isCartOpen(val) {
+                    if (val) {
+                        document.body.style.overflow = 'hidden';
+                    } else {
+                        document.body.style.overflow = '';
+                    }
+                },
+                cart: {
+                    deep: true,
+                    handler(val) {
+                        const toSave = val.map(item => ({ sku: item.product.sku, qty: item.qty }));
+                        localStorage.setItem('hl_cart', JSON.stringify(toSave));
+                    }
+                },
+                'totals': {
+                    handler(newVal, oldVal) {
+                        // Animate Price
+                        const targetPrice = parseFloat(newVal.price);
+                        this.tweenValue(this.animatedPrice, targetPrice, 500, (val) => {
+                            this.animatedPrice = val;
+                        });
+                        // Animate VP
+                        const targetVP = parseFloat(newVal.vp);
+                        this.tweenValue(this.animatedVP, targetVP, 500, (val) => {
+                            this.animatedVP = val;
+                        });
+                        // Animate Expenses
+                        const targetExpenses = parseFloat(newVal.expenses);
+                        this.tweenValue(this.animatedExpenses, targetExpenses, 500, (val) => {
+                            this.animatedExpenses = val;
+                        });
+                        // Animate Profit
+                        const targetProfit = parseFloat(newVal.profit);
+                        this.tweenValue(this.animatedProfit, targetProfit, 500, (val) => {
+                            this.animatedProfit = val;
+                        });
+                    },
+                    deep: true,
+                    immediate: true
+                }
+            },
+            computed: {
+                categories() {
+                    const cats = new Set(this.rawDb.map(p => p.cat));
+                    return Array.from(cats);
+                },
+                filteredProducts() {
+                    let prods = this.rawDb;
+                    if (this.selectedCategory !== 'all') {
+                        prods = prods.filter(p => p.cat === this.selectedCategory);
+                    }
+                    if (this.searchQuery) {
+                        const q = this.searchQuery.toLowerCase();
+                        prods = prods.filter(p =>
+                            p.name.toLowerCase().includes(q) ||
+                            p.sku.toLowerCase().includes(q)
+                        );
+                    }
+                    return prods;
+                },
+                groupedProducts() {
+                    const groups = {};
+                    this.filteredProducts.forEach(p => {
+                        if (!groups[p.cat]) groups[p.cat] = [];
+                        groups[p.cat].push(p);
+                    });
+                    return groups;
+                },
+                cartItemCount() {
+                    return this.cart.reduce((sum, item) => sum + item.qty, 0);
+                },
+                totals() {
+                    let totalVP = 0;
+                    let totalPrice = 0;
+                    let totalCost = 0;
+                    let totalRetail = 0;
+
+                    this.cart.forEach(item => {
+                        totalVP += item.product.vp * item.qty;
+                        totalPrice += this.getPrice(item.product, this.clientDiscount) * item.qty;
+                        totalCost += this.getPrice(item.product, this.myDiscount) * item.qty;
+                        totalRetail += this.getPrice(item.product, 100) * item.qty;
+                    });
+
+                    const delivery = this.hasDelivery ? (Number(this.deliveryCost) || 0) : 0;
+                    // Delivery is added to what client pays, but I still pay it out, so it doesn't affect profit margin from products
+                    const finalClientPrice = totalPrice + delivery;
+
+                    // My expenses = Cost of products + Delivery (I pay for delivery)
+                    const totalExpenses = totalCost + delivery;
+
+                    return {
+                        vp: totalVP.toFixed(2),
+                        price: finalClientPrice.toFixed(2),
+                        retail: totalRetail.toFixed(2),
+                        profit: (finalClientPrice - totalExpenses).toFixed(2),
+                        expenses: totalExpenses.toFixed(2),
+                        isLoss: finalClientPrice < totalExpenses,
+                        delivery: delivery
+                    }
+                }
+            },
+            methods: {
+                highlightMatch(text) {
+                    if (!this.searchQuery) return text;
+                    const regex = new RegExp(`(${this.searchQuery})`, 'gi');
+                    return text.replace(regex, '<span class="text-green-700 bg-green-100/80 rounded px-0.5 font-bold">$1</span>');
+                },
+                vibrate(ms) {
+                    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                        try {
+                            navigator.vibrate(ms);
+                        } catch (e) {
+                            // Ignore vibration errors
+                        }
+                    }
+                },
+                getCardClass(product) {
+                    if (product.justAdded) return 'active-card-feedback';
+                    if (this.selectedCategory !== 'all') {
+                        return 'bg-white border-slate-100';
+                    }
+                    const map = {
+                        "Сбалансированное питание": "bg-green-50/60 border-green-100",
+                        "Контроль веса": "bg-orange-50/60 border-orange-100",
+                        "Целевое питание": "bg-blue-50/60 border-blue-100",
+                        "Promote": "bg-purple-50/60 border-purple-100",
+                        "Литература": "bg-slate-100/60 border-slate-200"
+                    };
+                    return map[product.cat] || "bg-white border-slate-100";
+                },
+                getPrice(product, discount) {
+                    // Map the discount number to the property key
+                    const map = {
+                        50: 'p50', 42: 'p42', 35: 'p35', 25: 'p25', 15: 'p15', 100: 'p100'
+                    };
+                    return product[map[discount]];
+                },
+                addToCart(product) {
+                    this.vibrate(15);
+
+                    // Button Morph Animation
+                    product.justAdded = true;
+                    this.lastAddedSku = product.sku;
+                    setTimeout(() => {
+                        product.justAdded = false;
+                    }, 600);
+
+                    const existing = this.cart.find(i => i.product.sku === product.sku);
+                    if (existing) {
+                        existing.qty++;
+                    } else {
+                        this.cart.push({ product: product, qty: 1 });
+                        // Scroll to bottom when new item is added
+                        this.$nextTick(() => {
+                            this.scrollToBottom();
+                        });
+                    }
+                },
+                scrollToBottom() {
+                    const container = this.$refs.cartContainer;
+                    if (container) {
+                        container.scrollTop = container.scrollHeight;
+                    }
+                },
+                updateQuantity(item, delta) {
+                    this.vibrate(15);
+                    item.qty += delta;
+                    if (item.qty <= 0) {
+                        this.cart = this.cart.filter(i => i.product.sku !== item.product.sku);
+                    }
+                },
+                validateQuantity(item) {
+                    if (typeof item.qty !== 'number' || item.qty < 1) {
+                        item.qty = 1;
+                    }
+                    // Force integer
+                    item.qty = Math.floor(item.qty);
+                },
+                clearCart() {
+                    if (this.isClearing) {
+                        this.vibrate(50);
+                        this.cart = [];
+                        this.isClearing = false;
+                    } else {
+                        this.isClearing = true;
+                        this.vibrate(15); // Light warning vibration
+                        setTimeout(() => this.isClearing = false, 3000);
+                    }
+                },
+                formatCurrency(val) {
+                    return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' }).format(val);
+                },
+                formatNumber(val) {
+                    return new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
+                },
+                copyOrder() {
+                    if (this.cart.length === 0) {
+                        this.shakeError = true;
+                        this.vibrate(50);
+                        setTimeout(() => this.shakeError = false, 400);
+                        return;
+                    }
+
+                    const lines = [];
+
+                    if (this.simpleCopy) {
+                        // Simple format: Name x Qty
+                        this.cart.forEach(item => {
+                            lines.push(`${item.product.name} x${item.qty}`);
+                        });
+                    } else {
+                        // Full format with prices
+                        lines.push(`Заказ (Скидка: ${this.clientDiscount}%)`);
+                        lines.push(``);
+
+                        this.cart.forEach(item => {
+                            const price = this.getPrice(item.product, this.clientDiscount);
+                            lines.push(`${item.product.name} x${item.qty} = ${this.formatCurrency(price * item.qty)}`);
+                        });
+                    }
+
+                    // Footer - now included in both modes
+                    lines.push(``);
+                    lines.push(`----------------`);
+                    lines.push(`Итого VP: ${this.totals.vp}`);
+
+                    if (this.totals.delivery > 0) {
+                        lines.push(`Доставка: ${this.formatCurrency(this.totals.delivery)}`);
+                    }
+
+                    lines.push(`К оплате: ${this.formatCurrency(this.totals.price)}`);
+
+                    const text = lines.join('\n');
+                    navigator.clipboard.writeText(text).then(() => {
+                        this.vibrate(15);
+                        this.copyFeedbackText = 'Заказ скопирован';
+                        this.orderCopied = true;
+                        setTimeout(() => this.orderCopied = false, 2000);
+                    }).catch(err => {
+                        alert('Не удалось скопировать текст');
+                    });
+                },
+                handleMouseMove(e) {
+                    const card = e.currentTarget;
+                    const rect = card.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    card.style.setProperty('--mouse-x', `${x}px`);
+                    card.style.setProperty('--mouse-y', `${y}px`);
+                },
+                fixSearchScroll() {
+                    // Mobile/PWA optimization: When search is focused or category selected,
+                    // scroll to show search bar at top
+                    if (window.innerWidth < 1024) {
+                        this.updateSearchBarHeight();
+
+                        // Use double $nextTick + setTimeout to wait for Vue re-render after category change
+                        this.$nextTick(() => {
+                            this.$nextTick(() => {
+                                setTimeout(() => {
+                                    if (this.$refs.mainScrollContainer && this.$refs.mainHeader) {
+                                        // Get actual safe-area-inset-top value using a temp element
+                                        let safeAreaHeight = 0;
+                                        const tempEl = document.createElement('div');
+                                        tempEl.style.cssText = 'position:fixed;top:0;height:env(safe-area-inset-top,0px);pointer-events:none;';
+                                        document.body.appendChild(tempEl);
+                                        safeAreaHeight = tempEl.offsetHeight;
+                                        document.body.removeChild(tempEl);
+
+                                        // Scroll target: header height minus safe area (because search sticks to safe-area top)
+                                        let scrollTarget = this.$refs.mainHeader.offsetHeight - safeAreaHeight;
+
+                                        this.$refs.mainScrollContainer.scrollTo({
+                                            top: scrollTarget,
+                                            behavior: 'smooth'
+                                        });
+                                    }
+                                }, 50);
+                            });
+                        });
+                    }
+                },
+                updateSearchBarHeight() {
+                    if (this.$refs.searchBar) {
+                        this.searchBarHeight = this.$refs.searchBar.offsetHeight;
+                    }
+                },
+                copyRawNumber(val) {
+                    if (val === undefined || val === null) return;
+                    // Prepare raw number: replace dot with comma for Russian locale, no spaces
+                    const raw = val.toString().replace('.', ',');
+
+                    navigator.clipboard.writeText(raw).then(() => {
+                        this.vibrate(15);
+                        this.copyFeedbackText = 'Число скопировано';
+                        this.orderCopied = true;
+
+                        if (this.rawCopyTimeout) clearTimeout(this.rawCopyTimeout);
+                        this.rawCopyTimeout = setTimeout(() => this.orderCopied = false, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy', err);
+                    });
+                },
+                tweenValue(start, end, duration, callback) {
+                    let startTime = null;
+                    const step = (timestamp) => {
+                        if (!startTime) startTime = timestamp;
+                        const progress = Math.min((timestamp - startTime) / duration, 1);
+                        // Easing function (easeOutQuad)
+                        const ease = 1 - (1 - progress) * (1 - progress);
+                        const value = start + (end - start) * ease;
+                        callback(value);
+                        if (progress < 1) window.requestAnimationFrame(step);
+                    };
+                    window.requestAnimationFrame(step);
+                }
+            }
+        }).mount('#app')
+    </script>
+</body>
+
+</html>
