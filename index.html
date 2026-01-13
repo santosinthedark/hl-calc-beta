@@ -18,6 +18,7 @@
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -216,10 +217,22 @@
 
             /* Add generic shadow-lg on hover for delete if needed, but the above shadow covers it */
             .btn-delete:not(.is-clearing):hover {
-                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-                /* shadow-lg base */
-                /* Combine red shadow */
                 box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.2), 0 4px 6px -4px rgba(239, 68, 68, 0.1);
+            }
+
+            .btn-receipt:hover {
+                color: #16a34a;
+                border-color: #16a34a;
+                box-shadow: 0 10px 15px -3px rgba(22, 163, 74, 0.2), 0 4px 6px -4px rgba(22, 163, 74, 0.1);
+                transform: scale(1.05) translateY(-2px);
+            }
+
+            .btn-receipt:hover .receipt-icon {
+                transform: scale(1.1);
+            }
+
+            .btn-receipt:hover .receipt-lines {
+                opacity: 1;
             }
         }
 
@@ -902,10 +915,24 @@
                         </span>
 
                     </button>
+                    <!-- Кнопка "Красивый чек" -->
+                    <button @click="showReceiptModal = true; vibrate(30)"
+                        class="h-[52px] w-14 rounded-xl border border-slate-200 bg-white text-slate-400 shadow-sm flex items-center justify-center transition-all duration-300 active:scale-95 btn-receipt">
+                        <svg class="w-5 h-5 receipt-icon transition-transform duration-300" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <!-- Корзина/чек иконка -->
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                            </path>
+                            <path class="receipt-lines transition-opacity duration-300 opacity-60"
+                                stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h4">
+                            </path>
+                        </svg>
+                    </button>
                     <button @click="clearCart"
                         :class="['relative overflow-hidden h-[52px] rounded-xl border transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] flex items-center justify-center gap-2 btn-delete', 
                             isClearing 
-                                ? 'bg-red-500 border-red-500 text-white shadow-red-500/30 shadow-lg w-32 is-clearing' 
+                                ? 'bg-red-500 border-red-500 text-white shadow-red-500/30 shadow-lg w-[6.5rem] is-clearing' 
                                 : 'w-14 bg-white border-slate-200 text-slate-400 shadow-sm text-base active:scale-95']">
 
                         <div v-if="isClearing" class="absolute inset-0 shine-effect pointer-events-none opacity-20">
@@ -955,6 +982,142 @@
             </div>
         </Transition>
 
+        <!-- Модальное окно "Красивый чек" -->
+        <transition name="fade">
+            <div v-if="showReceiptModal"
+                class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+                @click.self="showReceiptModal = false">
+
+                <!-- Кнопки управления (вне карточки) -->
+                <div class="absolute top-6 right-6 z-30 flex flex-col gap-2">
+                    <!-- Кнопка закрыть -->
+                    <button @click="showReceiptModal = false"
+                        class="w-11 h-11 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 active:scale-90 active:bg-white/40 transition-all backdrop-blur-md"
+                        title="Закрыть">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                    <!-- Кнопка скачать -->
+                    <button @click="downloadReceipt"
+                        class="w-11 h-11 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 active:scale-90 active:bg-green-500 transition-all backdrop-blur-md"
+                        title="Скачать чек">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                    </button>
+                    <!-- Кнопка копировать -->
+                    <button @click="copyReceiptToClipboard"
+                        class="w-11 h-11 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 active:scale-90 active:bg-green-500 transition-all backdrop-blur-md"
+                        title="Копировать в буфер">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Контейнер со скроллом -->
+                <div class="relative w-full max-w-md max-h-[90vh] overflow-y-auto" style="scrollbar-width: none;">
+                    <div ref="receiptCard" class="bg-white shadow-2xl overflow-hidden">
+
+                        <!-- Шапка чека -->
+                        <div class="bg-gradient-to-br from-green-600 to-green-700 text-white"
+                            style="text-align: center; padding: 28px 24px;">
+                            <div
+                                style="width: 80px; height: 80px; background: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 20px auto; padding: 18px; box-sizing: border-box;">
+                                <svg style="width: 44px; height: 44px; display: block;" fill="none" stroke="white"
+                                    stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h2 style="font-size: 22px; font-weight: bold; margin: 0;">Ваш заказ</h2>
+                            <p style="color: rgba(220,252,231,1); font-size: 14px; margin-top: 6px;">{{ new
+                                Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+                                }}</p>
+                        </div>
+
+                        <!-- Список товаров -->
+                        <div class="p-5 bg-white">
+                            <div v-if="cart.length === 0" style="text-align: center; padding: 32px 0; color: #94a3b8;">
+                                <p>Корзина пуста</p>
+                            </div>
+
+                            <table v-else style="width: 100%; border-collapse: collapse; margin-bottom: 0;">
+                                <tr v-for="(item, index) in cart" :key="'receipt-' + item.product.sku"
+                                    :style="index < cart.length - 1 ? 'border-bottom: 1px solid #f1f5f9;' : ''">
+                                    <td style="padding: 8px 12px 8px 0; vertical-align: top; text-align: left;">
+                                        <p
+                                            style="font-weight: 500; color: #1e293b; font-size: 14px; line-height: 1.3; margin: 0;">
+                                            {{ item.product.name }}</p>
+                                        <p style="font-size: 12px; color: #94a3b8; margin-top: 2px;">{{ item.qty }} шт.
+                                            × {{ formatCurrency(getPrice(item.product, clientDiscount)) }}</p>
+                                    </td>
+                                    <td
+                                        style="padding: 8px 0; vertical-align: top; text-align: right; white-space: nowrap;">
+                                        <span style="font-weight: bold; color: #0f172a; font-size: 14px;">{{
+                                            formatCurrency(getPrice(item.product, clientDiscount) * item.qty) }}</span>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Итоги -->
+                            <div v-if="cart.length > 0"
+                                style="margin-top: 20px; padding-top: 16px; border-top: 2px solid #f1f5f9;">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <tr>
+                                        <td style="padding: 4px 0; font-size: 14px; color: #64748b; text-align: left;">
+                                            Товаров:</td>
+                                        <td
+                                            style="padding: 4px 0; font-size: 14px; font-weight: 500; color: #334155; text-align: right;">
+                                            {{ cartItemCount }} поз.</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 4px 0; font-size: 14px; color: #64748b; text-align: left;">
+                                            Всего VP:</td>
+                                        <td
+                                            style="padding: 4px 0; font-size: 14px; font-weight: 500; color: #334155; text-align: right;">
+                                            {{ formatNumber(totals.vp) }}</td>
+                                    </tr>
+                                    <tr v-if="hasDelivery && deliveryCost > 0">
+                                        <td style="padding: 4px 0; font-size: 14px; color: #64748b; text-align: left;">
+                                            Доставка:</td>
+                                        <td
+                                            style="padding: 4px 0; font-size: 14px; font-weight: 500; color: #334155; text-align: right;">
+                                            {{ formatCurrency(deliveryCost) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 4px 0; font-size: 14px; color: #64748b; text-align: left;">
+                                            Заказ под:</td>
+                                        <td
+                                            style="padding: 4px 0; font-size: 14px; font-weight: 500; color: #334155; text-align: right;">
+                                            {{ clientDiscount === 100 ? 'Розница' : clientDiscount + '%' }}</td>
+                                    </tr>
+                                </table>
+
+                                <!-- Итого к оплате -->
+                                <div
+                                    style="margin-top: 12px; padding: 16px 0; border-top: 1px solid #e2e8f0; display: table; width: 100%;">
+                                    <div style="display: table-row;">
+                                        <div
+                                            style="display: table-cell; font-size: 16px; font-weight: bold; color: #1e293b; text-align: left; vertical-align: baseline;">
+                                            Итого к оплате:</div>
+                                        <div
+                                            style="display: table-cell; font-size: 24px; font-weight: bold; color: #16a34a; text-align: right; vertical-align: baseline;">
+                                            {{ formatCurrency(totals.price) }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
     </div>
 
     <!-- Toast Notification Removed -->
@@ -987,6 +1150,7 @@
                     orderCopied: false,
                     shakeError: false,
                     copyFeedbackText: 'Скопировано',
+                    showReceiptModal: false,
                     // Data parsed directly from your CSV file
                     rawDb: [
                         { cat: "Сбалансированное питание", sku: "2793", name: "Коктейль Формула 1", vp: 23.95, p50: 1853.79, p42: 2082.86, p35: 2283.29, p25: 2569.63, p15: 2855.96, p100: 3708 },
@@ -1245,6 +1409,69 @@
                 }
             },
             methods: {
+                // Скачать чек как изображение
+                async downloadReceipt() {
+                    const card = this.$refs.receiptCard;
+                    if (!card) return;
+
+                    try {
+                        const canvas = await html2canvas(card, {
+                            backgroundColor: '#ffffff',
+                            scale: 2,
+                            useCORS: true,
+                            logging: false,
+                            width: card.scrollWidth,
+                            height: card.scrollHeight
+                        });
+
+                        const now = new Date();
+                        const dateStr = now.toISOString().slice(0, 10);
+                        const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '-');
+                        const filename = `чек-${dateStr}-${timeStr}.png`;
+
+                        const link = document.createElement('a');
+                        link.download = filename;
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+
+                        this.vibrate(30);
+                    } catch (error) {
+                        console.error('Ошибка скачивания чека:', error);
+                    }
+                },
+
+                // Копировать чек в буфер обмена
+                async copyReceiptToClipboard() {
+                    const card = this.$refs.receiptCard;
+                    if (!card) return;
+
+                    try {
+                        const canvas = await html2canvas(card, {
+                            backgroundColor: '#ffffff',
+                            scale: 2,
+                            useCORS: true,
+                            logging: false,
+                            width: card.scrollWidth,
+                            height: card.scrollHeight
+                        });
+
+                        canvas.toBlob(async (blob) => {
+                            if (blob) {
+                                try {
+                                    await navigator.clipboard.write([
+                                        new ClipboardItem({ 'image/png': blob })
+                                    ]);
+                                    this.vibrate(30);
+                                } catch (err) {
+                                    console.error('Ошибка копирования в буфер:', err);
+                                }
+                            }
+                        }, 'image/png');
+                    } catch (error) {
+                        console.error('Ошибка создания скриншота:', error);
+                    }
+                },
+
                 highlightMatch(text) {
                     if (!this.searchQuery) return text;
                     const regex = new RegExp(`(${this.searchQuery})`, 'gi');
