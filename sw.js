@@ -21,6 +21,15 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Для локальных запросов — сетевой fetch
-    event.respondWith(fetch(event.request));
+    // Для локальных запросов — сетевой fetch с обработкой ошибок
+    event.respondWith(
+        fetch(event.request).catch((error) => {
+            console.log('SW: Ошибка сети', error);
+            // Возвращаем пустой ответ с ошибкой
+            return new Response('Сеть недоступна', {
+                status: 503,
+                statusText: 'Service Unavailable'
+            });
+        })
+    );
 });
