@@ -1998,15 +1998,20 @@
                             this.$nextTick(() => {
                                 setTimeout(() => {
                                     if (this.$refs.mainScrollContainer && this.$refs.mainHeader) {
-                                        // Get actual safe-area-inset-top value using a temp element
-                                        let safeAreaHeight = 0;
-                                        const tempEl = document.createElement('div');
-                                        tempEl.style.cssText = 'position:fixed;top:0;height:env(safe-area-inset-top,0px);pointer-events:none;';
-                                        document.body.appendChild(tempEl);
-                                        safeAreaHeight = tempEl.offsetHeight;
-                                        document.body.removeChild(tempEl);
+                                        // Более надежный способ получить Safe Area для PWA:
+                                        // Берем текущий padding-top заголовка и вычитаем базовый (1.25rem = 20px)
+                                        const headerStyle = window.getComputedStyle(this.$refs.mainHeader);
+                                        const paddingTop = parseFloat(headerStyle.paddingTop);
 
-                                        // Scroll target: header height minus safe area (because search sticks to safe-area top)
+                                        // Вычисляем размер шрифта root (обычно 16px) для точного перевода rem в px
+                                        const rootFontSize = parseFloat(window.getComputedStyle(document.documentElement).fontSize);
+                                        const basePadding = 1.25 * rootFontSize; // 1.25rem - это pwa-header-padding
+
+                                        // Разница и есть наш safe-area (или 0 если его нет)
+                                        const safeAreaHeight = Math.max(0, paddingTop - basePadding);
+
+                                        // Цель скролла: высота хедера минус safe-area.
+                                        // Это оставит safe-area видимой сверху, а search bar прилипнет к ней.
                                         let scrollTarget = this.$refs.mainHeader.offsetHeight - safeAreaHeight;
 
                                         this.$refs.mainScrollContainer.scrollTo({
