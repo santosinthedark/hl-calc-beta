@@ -20,6 +20,10 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
+        html {
+            scroll-behavior: auto;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
@@ -988,7 +992,8 @@
                 @click.self="showReceiptModal = false">
 
                 <!-- Кнопки управления (вне карточки) -->
-                <div class="absolute top-4 right-4 z-[110] flex flex-col gap-2">
+                <div class="absolute right-4 z-[110] flex flex-col gap-2"
+                    style="top: max(1rem, env(safe-area-inset-top, 1rem))">
                     <!-- Кнопка закрыть -->
                     <button @click="showReceiptModal = false"
                         class="w-11 h-11 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 active:scale-90 active:bg-white/40 transition-all backdrop-blur-md"
@@ -1007,8 +1012,8 @@
                                 d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
                     </button>
-                    <!-- Кнопка копировать -->
-                    <button @click="copyReceiptToClipboard"
+                    <!-- Кнопка копировать (только на desktop) -->
+                    <button v-if="!isIOSDevice" @click="copyReceiptToClipboard"
                         class="w-11 h-11 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 active:scale-90 active:bg-green-500 transition-all backdrop-blur-md"
                         title="Копировать в буфер">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1221,6 +1226,16 @@
                 }
             },
             mounted() {
+                // Принудительный скролл вверх для iOS Safari
+                window.scrollTo(0, 0);
+                document.body.scrollTop = 0;
+                document.documentElement.scrollTop = 0;
+
+                // Повторить через небольшую задержку (для надёжности на iOS)
+                setTimeout(() => {
+                    window.scrollTo(0, 0);
+                }, 100);
+
                 // Имитация минимальной задержки для красоты (чтобы логотип успел мелькнуть)
                 setTimeout(() => {
                     const preloader = document.getElementById('preloader');
@@ -1362,6 +1377,10 @@
                 }
             },
             computed: {
+                isIOSDevice() {
+                    return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                },
                 categories() {
                     const cats = new Set(this.rawDb.map(p => p.cat));
                     return Array.from(cats);
@@ -1475,8 +1494,8 @@
                         const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '-');
                         const filename = `чек-${dateStr}-${timeStr}.png`;
 
-                        // Попробовать Web Share API (iOS)
-                        if (navigator.share && navigator.canShare) {
+                        // Попробовать Web Share API (только iOS, т.к. на Android <a download> работает)
+                        if (this.isIOSDevice && navigator.share && navigator.canShare) {
                             try {
                                 const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
                                 const file = new File([blob], filename, { type: 'image/png' });
@@ -1484,12 +1503,16 @@
                                 if (navigator.canShare({ files: [file] })) {
                                     await navigator.share({ files: [file] });
                                     this.vibrate(30);
-                                    this.showReceiptToast('Сохранено в Фото');
+                                    this.showReceiptToast('Готово');
                                     return;
                                 }
                             } catch (shareErr) {
-                                // Если share не сработал, пробуем обычное скачивание
-                                console.log('Share API не сработал, пробуем download');
+                                // Пользователь отменил — не показываем ошибку
+                                if (shareErr.name === 'AbortError') {
+                                    return;
+                                }
+                                // Другая ошибка — пробуем обычное скачивание
+                                console.log('Share API не сработал:', shareErr.message);
                             }
                         }
 
@@ -1541,12 +1564,12 @@
                         }
 
                         // Fallback для iOS - показать через Share
-                        if (navigator.share) {
+                        if (this.isIOSDevice && navigator.share) {
                             const file = new File([blob], 'чек.png', { type: 'image/png' });
                             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                                 await navigator.share({ files: [file] });
                                 this.vibrate(30);
-                                this.showReceiptToast('Чек скопирован');
+                                this.showReceiptToast('Готово');
                                 return;
                             }
                         }
