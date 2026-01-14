@@ -1568,8 +1568,9 @@
                     if (this.html2canvasLoaded) return;
 
                     const urls = [
-                        'https://html2canvas.hertzen.com/dist/html2canvas.min.js',
-                        'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'
+                        './html2canvas.min.js', // Локальный файл — самый быстрый и надёжный
+                        'https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js',
+                        'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js'
                     ];
 
                     for (const url of urls) {
