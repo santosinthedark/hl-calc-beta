@@ -27,15 +27,16 @@
             bottom: 0;
             width: 100%;
             height: 100%;
-            min-height: 100vh;
-            min-height: 100dvh;
-            /* Dynamic viewport height для iOS */
             z-index: 9999;
             background: #f8fafc;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            /* Учитываем safe-area (верх и низ) - это нужно для мобильного браузера */
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            box-sizing: border-box;
             transition: opacity 0.7s ease-out;
         }
 
@@ -56,9 +57,37 @@
             filter: blur(80px);
         }
 
-        #preloader-icon {
-            position: relative;
+        /* Контейнер для центрирования контента прелоадера */
+        #preloader-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             z-index: 10;
+        }
+
+        /* Специально для PWA: скрываем контент в начале, чтобы не было видно "прыжков" layout */
+        @media all and (display-mode: standalone) {
+            #preloader-content {
+                opacity: 0;
+                /* Задержка 0.8s (ждем пока устаканится layout), потом плавное появление 0.5s */
+                animation: pwa-fade-in 0.5s ease-out 0.8s forwards;
+            }
+        }
+
+        @keyframes pwa-fade-in {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #preloader-icon {
             width: 5rem;
             height: 5rem;
             background: #16a34a;
@@ -72,8 +101,6 @@
         }
 
         #preloader-text {
-            position: relative;
-            z-index: 10;
             margin-top: 1.5rem;
             font-size: 1.25rem;
             font-weight: 700;
@@ -112,17 +139,63 @@
         }
     </style>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <!-- Tailwind CSS: локальный файл с fallback на CDN -->
+    <script src="./tailwind.js" onerror="
+        var s = document.createElement('script');
+        s.src = 'https://cdn.tailwindcss.com';
+        s.onerror = function() {
+            var s2 = document.createElement('script');
+            s2.src = 'https://cdn.jsdelivr.net/npm/@aspect-build/tailwindcss-cdn@0.0.4/dist/tailwind.min.js';
+            document.head.appendChild(s2);
+        };
+        document.head.appendChild(s);
+    "></script>
+    <!-- Удаление debug indicator Tailwind -->
+    <script>
+        setTimeout(function () {
+            document.querySelectorAll('body > div').forEach(function (el) {
+                if (el.style && el.style.position === 'fixed' && el.textContent && el.textContent.includes('px')) {
+                    el.remove();
+                }
+            });
+        }, 500);
+    </script>
+    <!-- Vue.js: локальный файл с fallback на CDN -->
+    <script src="./vue.js" onerror="
+        var s = document.createElement('script');
+        s.src = 'https://unpkg.com/vue@3/dist/vue.global.prod.js';
+        s.onerror = function() {
+            var s2 = document.createElement('script');
+            s2.src = 'https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js';
+            document.head.appendChild(s2);
+        };
+        document.head.appendChild(s);
+    "></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Скрыть debug indicator от Tailwind Play CDN */
+        [data-tailwind-cdn-indicator] {
+            display: none !important;
+        }
+
+        .fixed.right-4.bottom-4 {
+            display: none !important;
+        }
+
+        /* Скрыть индикатор размера экрана (правый верхний угол) */
+        .fixed.top-0.right-0,
+        body>div:last-child[style*="fixed"] {
+            display: none !important;
+        }
+
         html {
             scroll-behavior: auto;
         }
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
+            background-color: #f8fafc;
+            /* Цвет прелоадера для safe area */
         }
 
         ::selection {
@@ -659,25 +732,27 @@
     <div id="preloader">
         <div id="preloader-glow"></div>
 
-        <div id="preloader-icon">
-            <svg style="width: 2.5rem; height: 2.5rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M16 2H8C5 2 3 4 3 7V17C3 20 5 22 8 22H16C19 22 21 20 21 17V7C21 4 19 2 16 2Z" />
-                <path d="M10.5 7H13.5" />
-                <path d="M7.5 12H8.5" />
-                <path d="M11.5 12H12.5" />
-                <path d="M15.5 12H16.5" />
-                <path d="M7.5 16H8.5" />
-                <path d="M11.5 16H12.5" />
-                <path d="M15.5 16H16.5" />
-            </svg>
-        </div>
+        <div id="preloader-content">
+            <div id="preloader-icon">
+                <svg style="width: 2.5rem; height: 2.5rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 2H8C5 2 3 4 3 7V17C3 20 5 22 8 22H16C19 22 21 20 21 17V7C21 4 19 2 16 2Z" />
+                    <path d="M10.5 7H13.5" />
+                    <path d="M7.5 12H8.5" />
+                    <path d="M11.5 12H12.5" />
+                    <path d="M15.5 12H16.5" />
+                    <path d="M7.5 16H8.5" />
+                    <path d="M11.5 16H12.5" />
+                    <path d="M15.5 16H16.5" />
+                </svg>
+            </div>
 
-        <p id="preloader-text">Загрузка...</p>
+            <p id="preloader-text">Загрузка...</p>
+        </div>
     </div>
 
     <div id="app" class="h-screen h-[100dvh] flex flex-col lg:flex-row overflow-hidden text-slate-800 bg-slate-50"
-        style="overscroll-behavior-y: none; visibility: hidden;">
+        style="overscroll-behavior-y: none; visibility: hidden; opacity: 0; transition: opacity 0.3s ease-out;">
 
         <div class="flex-1 flex flex-col h-full relative z-10 overflow-y-auto lg:overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] origin-top bg-white"
             :class="isCartOpen ? 'scale-[0.93] rounded-[2rem] opacity-80 translate-y-4' : 'scale-100 rounded-none opacity-100 translate-y-0'"
@@ -1346,17 +1421,25 @@
                 });
 
                 // Показать #app (был скрыт чтобы не мелькал чёрный фон)
-                document.getElementById('app').style.visibility = 'visible';
+                // Делаем visible сразу, но opacity будет 0 до скрытия прелоадера
+                const appEl = document.getElementById('app');
+                appEl.style.visibility = 'visible';
 
                 // Имитация минимальной задержки для красоты (чтобы логотип успел мелькнуть)
+                // Для PWA нужно больше времени из-за анимации delay 0.8s
+                const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+                const minLoadTime = isStandalone ? 2500 : 800;
+
                 setTimeout(() => {
                     const preloader = document.getElementById('preloader');
                     if (preloader) {
                         preloader.classList.add('preloader-hidden');
+                        // Показываем контент приложения плавно
+                        appEl.style.opacity = '1';
                         // Удаляем из DOM через секунду, чтобы не мешал
                         setTimeout(() => preloader.remove(), 700);
                     }
-                }, 800); // 800мс задержка, чтобы пользователь успел увидеть бренд
+                }, minLoadTime);
 
                 // Determine if mobile device
                 this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 1024;
@@ -1555,12 +1638,12 @@
             },
             methods: {
                 // Показать уведомление в чеке
-                showReceiptToast(message) {
+                showReceiptToast(message, duration = 2000) {
                     this.receiptToast = message;
                     this.receiptToastVisible = true;
                     setTimeout(() => {
                         this.receiptToastVisible = false;
-                    }, 2000);
+                    }, duration);
                 },
 
                 // Ленивая загрузка html2canvas
@@ -1634,8 +1717,11 @@
                         const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '-');
                         const filename = `чек-${dateStr}-${timeStr}.png`;
 
-                        // Попробовать Web Share API (только iOS, т.к. на Android <a download> работает)
-                        if (this.isIOSDevice && navigator.share && navigator.canShare) {
+                        // Определяем Chrome на iOS (не поддерживает download и share с файлами)
+                        const isChromeIOS = /CriOS/.test(navigator.userAgent);
+
+                        // Попробовать Web Share API (только Safari iOS, т.к. Chrome iOS не поддерживает files)
+                        if (this.isIOSDevice && !isChromeIOS && navigator.share && navigator.canShare) {
                             try {
                                 const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
                                 const file = new File([blob], filename, { type: 'image/png' });
@@ -1656,11 +1742,43 @@
                             }
                         }
 
-                        // Обычное скачивание (desktop)
+                        // Chrome iOS: копируем изображение в буфер обмена
+                        if (isChromeIOS) {
+                            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+
+                            // Пробуем Clipboard API
+                            if (navigator.clipboard && navigator.clipboard.write) {
+                                try {
+                                    await navigator.clipboard.write([
+                                        new ClipboardItem({ 'image/png': blob })
+                                    ]);
+                                    this.vibrate(30);
+                                    this.showReceiptToast('Чек скопирован! Вставьте в чат');
+                                    return;
+                                } catch (clipErr) {
+                                    console.log('Clipboard API не сработал в Chrome iOS');
+                                }
+                            }
+
+                            // Fallback: сначала показываем инструкцию, потом открываем вкладку
+                            const blobUrl = URL.createObjectURL(blob);
+                            this.vibrate(30);
+                            this.showReceiptToast('Зажмите картинку → Сохранить', 4000);
+
+                            // Задержка чтобы пользователь успел прочитать
+                            setTimeout(() => {
+                                window.open(blobUrl, '_blank');
+                            }, 1500);
+                            return;
+                        }
+
+                        // Обычное скачивание (desktop и Android)
                         const link = document.createElement('a');
                         link.download = filename;
                         link.href = canvas.toDataURL('image/png');
+                        document.body.appendChild(link);
                         link.click();
+                        document.body.removeChild(link);
 
                         this.vibrate(30);
                         this.showReceiptToast('Чек сохранён');
