@@ -16,6 +16,97 @@
         href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='12' fill='%2316a34a'/%3E%3Cg transform='translate(6,6) scale(0.5)'%3E%3Cpath d='M16 2H8C5 2 3 4 3 7V17C3 20 5 22 8 22H16C19 22 21 20 21 17V7C21 4 19 2 16 2Z' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M10.5 7H13.5' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M7.5 12H8.5' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M11.5 12H12.5' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M15.5 12H16.5' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M7.5 16H8.5' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M11.5 16H12.5' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M15.5 16H16.5' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/g%3E%3C/svg%3E">
     <link rel="apple-touch-icon" href="icon.png">
     <link rel="manifest" href="manifest.json">
+
+    <!-- Критический CSS для preloader (загружается мгновенно, до скриптов) -->
+    <style id="preloader-critical-css">
+        #preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 9999;
+            background: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.7s ease-out;
+        }
+
+        #preloader.preloader-hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #preloader-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 16rem;
+            height: 16rem;
+            background: rgba(74, 222, 128, 0.2);
+            border-radius: 50%;
+            filter: blur(80px);
+        }
+
+        #preloader-icon {
+            position: relative;
+            z-index: 10;
+            width: 5rem;
+            height: 5rem;
+            background: #16a34a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 25px 50px -12px rgba(22, 163, 74, 0.3);
+            animation: pulse-slow 2s ease-in-out infinite;
+        }
+
+        #preloader-text {
+            position: relative;
+            z-index: 10;
+            margin-top: 1.5rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            background: linear-gradient(to bottom right, #0f172a, #334155, #0f172a);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-slow {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.05);
+                opacity: 0.9;
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+    </style>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -560,16 +651,12 @@
 
     <div class="bg-noise"></div>
 
-    <div id="preloader"
-        class="fixed inset-0 z-[9999] bg-slate-50 flex flex-col items-center justify-center transition-opacity duration-700 ease-out">
-        <div
-            class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-green-400/20 rounded-full blur-[80px]">
-        </div>
+    <div id="preloader">
+        <div id="preloader-glow"></div>
 
-        <div
-            class="relative z-10 w-20 h-20 bg-green-600 rounded-full flex items-center justify-center text-white shadow-2xl shadow-green-600/30 animate-pulse-slow">
-            <svg class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-                stroke-linecap="round" stroke-linejoin="round">
+        <div id="preloader-icon">
+            <svg style="width: 2.5rem; height: 2.5rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M16 2H8C5 2 3 4 3 7V17C3 20 5 22 8 22H16C19 22 21 20 21 17V7C21 4 19 2 16 2Z" />
                 <path d="M10.5 7H13.5" />
                 <path d="M7.5 12H8.5" />
@@ -581,9 +668,7 @@
             </svg>
         </div>
 
-        <p
-            class="relative z-10 mt-6 text-xl font-bold tracking-tight bg-gradient-to-br from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent animate-pulse">
-            Загрузка...</p>
+        <p id="preloader-text">Загрузка...</p>
     </div>
 
     <div id="app" class="h-screen h-[100dvh] flex flex-col lg:flex-row overflow-hidden text-slate-800 bg-slate-900"
