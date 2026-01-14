@@ -1226,15 +1226,22 @@
                 }
             },
             mounted() {
+                // Отключаем автоматическое восстановление позиции скролла браузером
+                if ('scrollRestoration' in history) {
+                    history.scrollRestoration = 'manual';
+                }
+
                 // Принудительный скролл вверх для iOS Safari
                 window.scrollTo(0, 0);
                 document.body.scrollTop = 0;
                 document.documentElement.scrollTop = 0;
 
-                // Повторить через небольшую задержку (для надёжности на iOS)
-                setTimeout(() => {
-                    window.scrollTo(0, 0);
-                }, 100);
+                // Повторить несколько раз с разными задержками (для надёжности на iOS)
+                [0, 50, 100, 200, 500].forEach(delay => {
+                    setTimeout(() => {
+                        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                    }, delay);
+                });
 
                 // Имитация минимальной задержки для красоты (чтобы логотип успел мелькнуть)
                 setTimeout(() => {
