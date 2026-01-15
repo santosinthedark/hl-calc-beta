@@ -69,8 +69,15 @@
         /* Плавное появление логотипа во всех режимах */
         #preloader-content {
             opacity: 0;
-            /* Небольшая задержка + плавное появление для эстетичного эффекта */
+            /* Браузер: короткая задержка */
             animation: preloader-fade-in 0.5s ease-out 0.3s forwards;
+        }
+
+        /* PWA: увеличенная задержка чтобы layout успел стабилизироваться */
+        @media all and (display-mode: standalone) {
+            #preloader-content {
+                animation: preloader-fade-in 0.5s ease-out 0.8s forwards;
+            }
         }
 
         @keyframes preloader-fade-in {
@@ -521,6 +528,35 @@
             animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
         }
 
+        /* Heartbeat Animation for Price */
+        @keyframes heartbeat {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+                color: #16a34a;
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .price-pulse {
+            animation: heartbeat 0.25s ease-in-out infinite;
+        }
+
+        /* Fade masks for smooth scroll edges */
+        .mask-fade-bottom {
+            -webkit-mask-image: linear-gradient(to bottom, black 93%, transparent 100%);
+            mask-image: linear-gradient(to bottom, black 93%, transparent 100%);
+        }
+
+        /* Горизонтальный fade через overlay - не используем mask чтобы не затрагивать кнопки */
+        /* .mask-fade-x убран — CSS маска "тает" сами кнопки, а не только края скролла */
+
         /* Animated Trash Lid */
         /* Only apply hover effects on devices that support hover */
         @media (hover: hover) {
@@ -749,11 +785,12 @@
         </div>
     </div>
 
-    <div id="app" class="h-screen h-[100dvh] flex flex-col lg:flex-row overflow-hidden text-slate-800 bg-slate-50"
+    <div id="app"
+        class="h-screen h-[100dvh] flex flex-col lg:flex-row overflow-hidden text-slate-800 bg-slate-900 lg:bg-slate-50"
         style="overscroll-behavior-y: none; visibility: hidden; opacity: 0; transition: opacity 0.3s ease-out;">
 
         <div class="flex-1 flex flex-col h-full relative z-10 overflow-y-auto lg:overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] origin-top bg-white"
-            :class="isCartOpen ? 'scale-[0.93] rounded-[2rem] opacity-80 translate-y-4' : 'scale-100 rounded-none opacity-100 translate-y-0'"
+            :class="isCartOpen ? 'scale-[0.93] lg:scale-100 rounded-[2rem] lg:rounded-none opacity-80 lg:opacity-100 translate-y-4 lg:translate-y-0' : 'scale-100 rounded-none opacity-100 translate-y-0'"
             ref="mainScrollContainer" style="scrollbar-gutter: stable;">
             <header ref="mainHeader"
                 class="pwa-header-padding bg-white/90 backdrop-blur-md px-6 pb-5 border-b border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm z-20">
@@ -817,8 +854,9 @@
 
 
 
-            <div class="flex-1 bg-slate-50 pb-36 lg:pb-0 lg:overflow-y-auto overflow-visible" ref="contentWrapper"
-                :class="{'min-h-[150vh]': searchQuery.length > 0}" style="scrollbar-gutter: stable;">
+            <div class="flex-1 bg-slate-50 pb-36 lg:pb-0 lg:overflow-y-auto overflow-visible mask-fade-bottom"
+                ref="contentWrapper" :class="{'min-h-[150vh]': searchQuery.length > 0}"
+                style="scrollbar-gutter: stable;">
 
                 <!-- Search Bar (Moved Inside for Desktop Sticky Layering) -->
                 <div class="px-6 pt-4 pb-4 bg-slate-50/90 backdrop-blur-md border-b border-slate-200 sticky z-30 pwa-sticky-offset"
@@ -1042,7 +1080,7 @@
                     <div class="flex justify-between text-sm">
                         <span class="text-slate-500">Клиент платит ({{ clientDiscount}}%):</span>
                         <span
-                            class="font-bold cursor-pointer hover:opacity-75 active:scale-95 transition-all bg-gradient-to-br from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent tabular-nums"
+                            :class="['font-bold cursor-pointer hover:opacity-75 active:scale-95 transition-all bg-gradient-to-br from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent tabular-nums', { 'price-pulse': pricePulse }]"
                             @click="copyRawNumber(totals.price)" title="Нажмите, чтобы скопировать число">{{
                             formatCurrency(animatedPrice) }}</span>
                     </div>
@@ -1133,7 +1171,7 @@
                         formatNumber(animatedVP) }}
                         VP</span>
                     <span
-                        class="text-lg font-bold bg-gradient-to-br from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent">{{
+                        :class="['text-lg font-bold bg-gradient-to-br from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent', { 'price-pulse': pricePulse }]">{{
                         formatCurrency(animatedPrice) }}</span>
                 </div>
                 <button @click="isCartOpen = true"
@@ -1336,6 +1374,7 @@
                     animatedVP: 0,
                     animatedExpenses: 0,
                     animatedProfit: 0,
+                    pricePulse: false, // Для анимации пульсации цены
 
                     isClearing: false,
                     orderCopied: false,
@@ -1423,8 +1462,11 @@
                 const appEl = document.getElementById('app');
                 appEl.style.visibility = 'visible';
 
-                // Минимальная задержка для красоты (логотип появляется через 0.3s + анимация 0.5s)
-                const minLoadTime = 1200;
+                // Минимальная задержка для красоты
+                // Браузер: 1200мс (задержка 0.3s + анимация 0.5s + запас)
+                // PWA: 2500мс (задержка 0.8s + анимация 0.5s + запас для стабилизации)
+                const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+                const minLoadTime = isStandalone ? 2500 : 1200;
 
                 setTimeout(() => {
                     const preloader = document.getElementById('preloader');
@@ -1481,7 +1523,12 @@
                     this.cart = [];
                 }
                 // Initialize sticky header dynamic height
+                // Вызываем несколько раз с разными задержками для надёжности
+                // (шрифты и safe-area могут применяться с задержкой в iOS)
                 this.updateSearchBarHeight();
+                setTimeout(() => this.updateSearchBarHeight(), 100);
+                setTimeout(() => this.updateSearchBarHeight(), 300);
+                setTimeout(() => this.updateSearchBarHeight(), 500);
                 window.addEventListener('resize', this.updateSearchBarHeight);
             },
             watch: {
@@ -1562,9 +1609,13 @@
                         this.tweenValue(this.animatedProfit, targetProfit, 500, (val) => {
                             this.animatedProfit = val;
                         });
+
+                        // Пульсация цены (heartbeat effect) — пока цифры анимируются (500мс)
+                        this.pricePulse = true;
+                        setTimeout(() => this.pricePulse = false, 500);
                     },
-                    deep: true,
-                    immediate: true
+                    deep: true
+                    // Убрали immediate чтобы не пульсировало при открытии сайта
                 }
             },
             computed: {
@@ -2070,7 +2121,8 @@
 
     <!-- Регистрация Service Worker для PWA -->
     <script>
-        if ('serviceWorker' in navigator) {
+        // Service Worker не работает с file:// протоколом (только https:// или localhost)
+        if ('serviceWorker' in navigator && location.protocol !== 'file:') {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
                     .then(registration => {
