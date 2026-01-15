@@ -66,16 +66,14 @@
             z-index: 10;
         }
 
-        /* Специально для PWA: скрываем контент в начале, чтобы не было видно "прыжков" layout */
-        @media all and (display-mode: standalone) {
-            #preloader-content {
-                opacity: 0;
-                /* Задержка 0.8s (ждем пока устаканится layout), потом плавное появление 0.5s */
-                animation: pwa-fade-in 0.5s ease-out 0.8s forwards;
-            }
+        /* Плавное появление логотипа во всех режимах */
+        #preloader-content {
+            opacity: 0;
+            /* Небольшая задержка + плавное появление для эстетичного эффекта */
+            animation: preloader-fade-in 0.5s ease-out 0.3s forwards;
         }
 
-        @keyframes pwa-fade-in {
+        @keyframes preloader-fade-in {
             from {
                 opacity: 0;
                 transform: translateY(10px);
@@ -1425,10 +1423,8 @@
                 const appEl = document.getElementById('app');
                 appEl.style.visibility = 'visible';
 
-                // Имитация минимальной задержки для красоты (чтобы логотип успел мелькнуть)
-                // Для PWA нужно больше времени из-за анимации delay 0.8s
-                const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-                const minLoadTime = isStandalone ? 2500 : 800;
+                // Минимальная задержка для красоты (логотип появляется через 0.3s + анимация 0.5s)
+                const minLoadTime = 1200;
 
                 setTimeout(() => {
                     const preloader = document.getElementById('preloader');
@@ -1708,8 +1704,13 @@
                             scale: 2,
                             useCORS: true,
                             logging: false,
-                            width: card.scrollWidth,
-                            height: card.scrollHeight
+                            width: card.offsetWidth,
+                            height: card.offsetHeight,
+                            // Явно указываем начало захвата, чтобы не было белой полосы
+                            x: 0,
+                            y: 0,
+                            scrollX: 0,
+                            scrollY: 0
                         });
 
                         const now = new Date();
@@ -1801,8 +1802,13 @@
                             scale: 2,
                             useCORS: true,
                             logging: false,
-                            width: card.scrollWidth,
-                            height: card.scrollHeight
+                            width: card.offsetWidth,
+                            height: card.offsetHeight,
+                            // Явно указываем начало захвата
+                            x: 0,
+                            y: 0,
+                            scrollX: 0,
+                            scrollY: 0
                         });
 
                         const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
