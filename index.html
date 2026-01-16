@@ -176,6 +176,8 @@
         };
         document.head.appendChild(s);
     "></script>
+    <!-- Canvas Confetti для праздничного эффекта при копировании -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         /* Скрыть debug indicator от Tailwind Play CDN */
@@ -282,26 +284,20 @@
             transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
         }
 
-        .list-enter-active {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        }
 
         .list-leave-active {
-            transition: all 0.2s ease-out !important;
+            transition: none !important;
             position: absolute !important;
             width: 100% !important;
-            z-index: 0;
+            z-index: -1;
             pointer-events: none;
+            opacity: 0 !important;
+            visibility: hidden !important;
         }
 
-        .list-enter-from {
-            opacity: 0 !important;
-            transform: scale(0.95) !important;
-        }
 
         .list-leave-to {
             opacity: 0 !important;
-            transform: translateX(-15px) scale(0.95) !important;
         }
 
         /* Cart specific animation (fix duplication glitch) */
@@ -350,7 +346,8 @@
         }
 
         .stagger-appear {
-            animation: fadeInUp 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+            opacity: 0;
+            animation: fadeInUp 0.4s ease-out forwards;
         }
 
         @keyframes subtle-shine {
@@ -528,8 +525,8 @@
             animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
         }
 
-        /* Heartbeat Animation for Price */
-        @keyframes heartbeat {
+        /* Heartbeat Animation for Price - Increase (green) */
+        @keyframes heartbeat-up {
             0% {
                 transform: scale(1);
             }
@@ -544,18 +541,52 @@
             }
         }
 
-        .price-pulse {
-            animation: heartbeat 0.25s ease-in-out infinite;
+        /* Heartbeat Animation for Price - Decrease (red) */
+        @keyframes heartbeat-down {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+                color: #ef4444;
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .price-pulse-up {
+            animation: heartbeat-up 0.25s ease-in-out infinite;
+        }
+
+        .price-pulse-down {
+            animation: heartbeat-down 0.25s ease-in-out infinite;
         }
 
         /* Fade masks for smooth scroll edges */
         .mask-fade-bottom {
-            -webkit-mask-image: linear-gradient(to bottom, black 93%, transparent 100%);
-            mask-image: linear-gradient(to bottom, black 93%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+            mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
         }
 
         /* Горизонтальный fade через overlay - не используем mask чтобы не затрагивать кнопки */
         /* .mask-fade-x убран — CSS маска "тает" сами кнопки, а не только края скролла */
+
+        /* Цветная тень для кнопки (Glow Effect) */
+        .shadow-glow-green {
+            box-shadow: 0 10px 40px -10px rgba(22, 163, 74, 0.5);
+        }
+
+        /* Градиентный текст для итоговой цены (Premium) */
+        .text-gradient-premium {
+            background: linear-gradient(135deg, #16a34a 0%, #059669 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 2px 10px rgba(22, 197, 94, 0.2));
+        }
 
         /* Animated Trash Lid */
         /* Only apply hover effects on devices that support hover */
@@ -854,9 +885,8 @@
 
 
 
-            <div class="flex-1 bg-slate-50 pb-36 lg:pb-0 lg:overflow-y-auto overflow-visible mask-fade-bottom"
-                ref="contentWrapper" :class="{'min-h-[150vh]': searchQuery.length > 0}"
-                style="scrollbar-gutter: stable;">
+            <div class="flex-1 bg-slate-50 pb-36 lg:pb-0 lg:overflow-y-auto overflow-visible" ref="contentWrapper"
+                :class="{'min-h-[150vh]': searchQuery.length > 0}" style="scrollbar-gutter: stable;">
 
                 <!-- Search Bar (Moved Inside for Desktop Sticky Layering) -->
                 <div class="px-6 pt-4 pb-4 bg-slate-50/90 backdrop-blur-md border-b border-slate-200 sticky z-30 pwa-sticky-offset"
@@ -881,11 +911,12 @@
                         </button>
                     </div>
 
-                    <div class="flex gap-2 mt-3 overflow-x-auto pb-1 no-scrollbar">
-                        <button @click="selectedCategory = 'all'; fixSearchScroll(); vibrate(15)"
+                    <div class="flex gap-2 mt-3 overflow-x-auto pb-1 no-scrollbar" ref="categoryScroller">
+                        <button ref="catBtnAll"
+                            @click="selectedCategory = 'all'; fixSearchScroll(); vibrate(15); centerCategoryButton($refs.catBtnAll)"
                             :class="['whitespace-nowrap px-4 py-2 rounded-2xl text-xs font-medium transition-all duration-100 active:scale-90', selectedCategory === 'all' ? 'bg-slate-900 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200']">Все</button>
-                        <button v-for="cat in categories" :key="cat"
-                            @click="selectedCategory = cat; fixSearchScroll(); vibrate(15)"
+                        <button v-for="cat in categories" :key="cat" :ref="'catBtn_' + cat"
+                            @click="selectedCategory = cat; fixSearchScroll(); vibrate(15); centerCategoryButton($event.target)"
                             :class="['whitespace-nowrap px-4 py-2 rounded-2xl text-xs font-medium transition-all duration-100 active:scale-90', selectedCategory === cat ? 'bg-green-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200']">
                             {{ cat }}
                         </button>
@@ -902,8 +933,8 @@
                         <div class="px-6 pt-2 relative">
                             <transition-group name="list" tag="div" class="flex flex-col gap-2 relative w-full">
                                 <div v-for="(product, index) in groupedProducts[cat]" :key="product.sku"
-                                    class="w-full relative stagger-appear"
-                                    :style="{ animationDelay: (index * 50) + 'ms' }">
+                                    :class="['w-full relative', animationsReady ? 'stagger-appear' : '']"
+                                    :style="animationsReady ? { animationDelay: (index * 50) + 'ms' } : {}">
                                     <div @mousemove="handleMouseMove"
                                         :class="['product-card-interactive spotlight-card flex items-center gap-3 p-3 rounded-xl border shadow-sm duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] transition-all group relative overflow-hidden bg-white', getCardClass(product)]">
 
@@ -925,8 +956,7 @@
                                             <p class="text-sm font-bold text-slate-900 leading-none tabular-nums">{{
                                                 formatCurrency(getPrice(product, clientDiscount)) }}</p>
                                             <p class="text-[10px] font-bold text-green-600 sm:hidden mt-0.5">{{
-                                                product.vp
-                                                }} VP
+                                                product.vp }} VP
                                             </p>
                                         </div>
 
@@ -1080,7 +1110,7 @@
                     <div class="flex justify-between text-sm">
                         <span class="text-slate-500">Клиент платит ({{ clientDiscount}}%):</span>
                         <span
-                            :class="['font-bold cursor-pointer hover:opacity-75 active:scale-95 transition-all bg-gradient-to-br from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent tabular-nums', { 'price-pulse': pricePulse }]"
+                            :class="['font-bold cursor-pointer hover:opacity-75 active:scale-95 transition-all bg-gradient-to-br from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent tabular-nums', { 'price-pulse-up': priceDirection === 'up', 'price-pulse-down': priceDirection === 'down' }]"
                             @click="copyRawNumber(totals.price)" title="Нажмите, чтобы скопировать число">{{
                             formatCurrency(animatedPrice) }}</span>
                     </div>
@@ -1171,7 +1201,7 @@
                         formatNumber(animatedVP) }}
                         VP</span>
                     <span
-                        :class="['text-lg font-bold bg-gradient-to-br from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent', { 'price-pulse': pricePulse }]">{{
+                        :class="['text-lg font-bold bg-gradient-to-br from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent', { 'price-pulse-up': priceDirection === 'up', 'price-pulse-down': priceDirection === 'down' }]">{{
                         formatCurrency(animatedPrice) }}</span>
                 </div>
                 <button @click="isCartOpen = true"
@@ -1374,7 +1404,8 @@
                     animatedVP: 0,
                     animatedExpenses: 0,
                     animatedProfit: 0,
-                    pricePulse: false, // Для анимации пульсации цены
+                    priceDirection: null, // 'up' или 'down' для анимации пульсации цены
+                    previousPrice: 0, // Для отслеживания направления изменения цены
 
                     isClearing: false,
                     orderCopied: false,
@@ -1384,6 +1415,7 @@
                     receiptToast: '',
                     receiptToastVisible: false,
                     html2canvasLoaded: false,
+                    animationsReady: false, // Флаг для включения каскадной анимации после загрузки
                     // Data parsed directly from your CSV file
                     rawDb: [
                         { cat: "Сбалансированное питание", sku: "2793", name: "Коктейль Формула 1", vp: 23.95, p50: 1853.79, p42: 2082.86, p35: 2283.29, p25: 2569.63, p15: 2855.96, p100: 3708 },
@@ -1451,7 +1483,7 @@
                 document.documentElement.scrollTop = 0;
 
                 // Повторить несколько раз с разными задержками (для надёжности на iOS)
-                [0, 50, 100, 200, 500].forEach(delay => {
+                [0, 50, 100, 200, 500, 800].forEach(delay => {
                     setTimeout(() => {
                         window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
                     }, delay);
@@ -1474,6 +1506,8 @@
                         preloader.classList.add('preloader-hidden');
                         // Показываем контент приложения плавно
                         appEl.style.opacity = '1';
+                        // Включаем каскадные анимации
+                        this.animationsReady = true;
                         // Удаляем из DOM через секунду, чтобы не мешал
                         setTimeout(() => preloader.remove(), 700);
                     }
@@ -1611,8 +1645,15 @@
                         });
 
                         // Пульсация цены (heartbeat effect) — пока цифры анимируются (500мс)
-                        this.pricePulse = true;
-                        setTimeout(() => this.pricePulse = false, 500);
+                        // Определяем направление изменения цены
+                        const newPrice = parseFloat(newVal.price);
+                        if (newPrice > this.previousPrice) {
+                            this.priceDirection = 'up';
+                        } else if (newPrice < this.previousPrice) {
+                            this.priceDirection = 'down';
+                        }
+                        this.previousPrice = newPrice;
+                        setTimeout(() => this.priceDirection = null, 500);
                     },
                     deep: true
                     // Убрали immediate чтобы не пульсировало при открытии сайта
@@ -1901,6 +1942,24 @@
                     const regex = new RegExp(`(${this.searchQuery})`, 'gi');
                     return text.replace(regex, '<span class="text-green-700 bg-green-100/80 rounded px-0.5 font-bold">$1</span>');
                 },
+
+                // Методы для цветных "аватарок" товаров
+                getProductColor(name) {
+                    let hash = 0;
+                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+                    return `hsl(${Math.abs(hash) % 360}, 75%, 94%)`;
+                },
+                getProductTextColor(name) {
+                    let hash = 0;
+                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+                    return `hsl(${Math.abs(hash) % 360}, 60%, 30%)`;
+                },
+                getInitials(name) {
+                    // Берем первые буквы слов, исключая короткие предлоги
+                    const words = name.split(' ').filter(w => w.length > 2);
+                    if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+                    return name.substring(0, 2).toUpperCase();
+                },
                 vibrate(ms) {
                     if (typeof navigator !== 'undefined' && navigator.vibrate) {
                         try {
@@ -1909,6 +1968,23 @@
                             // Ignore vibration errors
                         }
                     }
+                },
+                centerCategoryButton(btn) {
+                    // Центрирование кнопки категории в горизонтальном скролле
+                    if (!btn || !this.$refs.categoryScroller) return;
+                    const scroller = this.$refs.categoryScroller;
+                    const scrollerRect = scroller.getBoundingClientRect();
+                    const btnRect = btn.getBoundingClientRect();
+
+                    // Вычисляем нужную позицию: центр кнопки должен быть по центру контейнера
+                    const btnCenter = btnRect.left + btnRect.width / 2;
+                    const scrollerCenter = scrollerRect.left + scrollerRect.width / 2;
+                    const scrollOffset = btnCenter - scrollerCenter;
+
+                    scroller.scrollBy({
+                        left: scrollOffset,
+                        behavior: 'smooth'
+                    });
                 },
                 getCardClass(product) {
                     if (product.justAdded) return 'active-card-feedback';
@@ -2031,6 +2107,15 @@
                         this.vibrate(15);
                         this.copyFeedbackText = 'Заказ скопирован';
                         this.orderCopied = true;
+                        // Эффект конфетти для дофаминовой награды
+                        if (typeof confetti === 'function') {
+                            confetti({
+                                particleCount: 100,
+                                spread: 70,
+                                origin: { y: 0.6 },
+                                colors: ['#22c55e', '#16a34a', '#ffffff']
+                            });
+                        }
                         setTimeout(() => this.orderCopied = false, 2000);
                     }).catch(err => {
                         alert('Не удалось скопировать текст');
