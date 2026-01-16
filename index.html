@@ -17,6 +17,33 @@
     <link rel="apple-touch-icon" href="icon.png">
     <link rel="manifest" href="manifest.json">
 
+    <!-- Ранний сброс позиции скролла (до загрузки остальных скриптов) -->
+    <script>
+        // Отключаем восстановление позиции скролла браузером
+        if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+        // Сбросить скролл при загрузке (document.body ещё не существует в head)
+        window.scrollTo(0, 0);
+        if (document.documentElement) document.documentElement.scrollTop = 0;
+
+        // Сбросить скролл перед уходом со страницы (чтобы при возврате было сверху)
+        window.addEventListener('beforeunload', function () {
+            window.scrollTo(0, 0);
+        });
+
+        // Для Safari: сбросить при выходе из bfcache
+        window.addEventListener('pagehide', function () {
+            window.scrollTo(0, 0);
+        });
+
+        // При возврате из bfcache (кнопка "Назад") тоже сбросить
+        window.addEventListener('pageshow', function (e) {
+            if (e.persisted) {
+                window.scrollTo(0, 0);
+            }
+        });
+    </script>
+
     <!-- Критический CSS для preloader (загружается мгновенно, до скриптов) -->
     <style id="preloader-critical-css">
         #preloader {
@@ -1530,8 +1557,9 @@
                 const savedClientDiscount = localStorage.getItem('hl_client_discount');
                 if (savedClientDiscount) this.clientDiscount = Number(savedClientDiscount);
 
-                const savedCategory = localStorage.getItem('hl_category');
-                if (savedCategory) this.selectedCategory = savedCategory;
+
+                // Категорию НЕ восстанавливаем - при обновлении всегда начинаем с "Все"
+
 
                 const savedHasDelivery = localStorage.getItem('hl_has_delivery');
                 if (savedHasDelivery) this.hasDelivery = savedHasDelivery === 'true';
@@ -1981,8 +2009,15 @@
                     const scrollerCenter = scrollerRect.left + scrollerRect.width / 2;
                     const scrollOffset = btnCenter - scrollerCenter;
 
-                    scroller.scrollBy({
-                        left: scrollOffset,
+                    // Новая позиция скролла
+                    let newScrollLeft = scroller.scrollLeft + scrollOffset;
+
+                    // Ограничиваем скролл: не меньше 0, не больше максимума
+                    const maxScroll = scroller.scrollWidth - scroller.clientWidth;
+                    newScrollLeft = Math.max(0, Math.min(newScrollLeft, maxScroll));
+
+                    scroller.scrollTo({
+                        left: newScrollLeft,
                         behavior: 'smooth'
                     });
                 },
